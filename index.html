@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Serre Bois & Polycarbonate 1900×500 — Bureau d'Études & Atelier CAD</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- INTERFACE ECRAN ATELIER CAD -->
+  <div id="app" class="app-layout no-print">
+    <!-- 1. BARRE D'EN-TÊTE -->
+    <header class="top-bar">
+      <div class="brand-block">
+        <div class="brand-icon">🌱</div>
+        <div class="brand-titles">
+          <h1>SERRE BOIS &amp; POLYCARBONATE <span class="badge-status">PROJET ATELIER v1.0</span></h1>
+          <div class="brand-subtitle">
+            <span>Empreinte au sol : <strong>X 1900 × Y 500 mm</strong></span>
+            <span class="sep">•</span>
+            <span>Hauteur : <strong>Z 1045 → 1195 mm (Pente 16.7°)</strong></span>
+            <span class="sep">•</span>
+            <span>Entraxe lames : <strong>5 mm</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button id="btn-top-measure" class="action-btn" title="Activer/Désactiver l'outil de mesure 3D (Raccourci : M)">
+          📏 Mesurer (M)
+        </button>
+        <button id="btn-top-cutlist" class="action-btn accent-btn" title="Ouvrir le plan de découpe optimisé et l'impression A4">
+          🪚 Plan de Découpe (2D)
+        </button>
+        <button id="btn-top-bom" class="action-btn" title="Ouvrir la nomenclature complète des pièces et fournitures">
+          📋 Nomenclature &amp; Fiche Technique
+        </button>
+        <button id="btn-top-help" class="action-btn icon-only" title="Aide &amp; Raccourcis clavier">
+          ?
+        </button>
+      </div>
+    </header>
+
+    <!-- ZONE PRINCIPALE -->
+    <main class="workspace">
+      <!-- VIEWPORT 3D -->
+      <div id="viewport-container" class="viewport-container">
+        <canvas id="three-canvas"></canvas>
+
+        <!-- Calque des étiquettes de mesures 3D -->
+        <div id="measurement-labels" class="measurement-labels-layer"></div>
+
+        <!-- Tooltip temps réel de mesure -->
+        <div id="measurement-tooltip" class="measurement-tooltip hidden"></div>
+
+        <!-- Bandeau d'état flottant bas-centre -->
+        <div class="viewport-hud">
+          <div id="hud-selection" class="hud-pill">Aucune pièce sélectionnée (Cliquez sur une pièce en 3D)</div>
+          <div class="hud-coords">Repère Atelier : <strong>X</strong> Largeur (1900) · <strong>Y</strong> Profondeur (500) · <strong>Z</strong> Hauteur (1195)</div>
+        </div>
+      </div>
+
+      <!-- 2. VOLET GAUCHE : INSPECTEUR DE PIÈCE 2D ÉPURÉ -->
+      <aside id="piece-inspector" class="piece-inspector collapsed">
+        <div class="inspector-header">
+          <div class="inspector-meta-top">
+            <span id="insp-category" class="insp-badge">SOUS-ENSEMBLE</span>
+            <span id="insp-dims" class="insp-dims-pill">0 × 0 mm • Ép. 0 mm</span>
+            <button id="btn-close-inspector" class="btn-icon-close" title="Fermer l'inspecteur">✕</button>
+          </div>
+          <div class="inspector-title-row">
+            <span id="insp-code" class="insp-code">P01</span>
+            <h2 id="insp-name" class="insp-name">Nom de la pièce</h2>
+            <span id="insp-qty" class="insp-qty-badge">×1</span>
+          </div>
+        </div>
+
+        <!-- Dessin Technique 2D SVG Dynamique (sans texte verbeux) -->
+        <div id="inspector-svg-container" class="inspector-svg-wrapper"></div>
+
+        <!-- Barre d'actions en bas du volet (3 boutons stricts) -->
+        <div class="inspector-actions">
+          <button id="btn-insp-cutlist" class="insp-btn primary">
+            🪚 Situer sur le plan de découpe
+          </button>
+          <div class="insp-actions-row">
+            <button id="btn-insp-isolate" class="insp-btn">
+              👁️ Isoler
+            </button>
+            <button id="btn-insp-center" class="insp-btn">
+              🎯 Centrer
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 3. VOLET DROIT : PANNEAU DE CONTRÔLE CAD -->
+      <aside class="control-panel">
+        <!-- Section 1 : Visibilité & Mécanismes -->
+        <section class="panel-section">
+          <h3 class="section-title">👁️ Visibilité &amp; Mécanismes</h3>
+          <div class="checkbox-grid">
+            <label class="chk-label">
+              <input type="checkbox" data-group="backWall" checked />
+              <span>Façade Arrière (8 lames + 3 mont.)</span>
+            </label>
+            <label class="chk-label">
+              <input type="checkbox" data-group="frontWall" checked />
+              <span>Façade Avant (5 lames + vitrage)</span>
+            </label>
+            <label class="chk-label">
+              <input type="checkbox" data-group="sideLeft" checked />
+              <span>Côté Amovible Gauche</span>
+            </label>
+            <label class="chk-label">
+              <input type="checkbox" data-group="sideRight" checked />
+              <span>Côté Amovible Droit</span>
+            </label>
+            <label class="chk-label">
+              <input type="checkbox" data-group="roof" checked />
+              <span>Toit Ouvrant + Cadre</span>
+            </label>
+            <label class="chk-label">
+              <input type="checkbox" data-group="polycarbonate" checked />
+              <span>Plaques Polycarbonate (10 mm)</span>
+            </label>
+            <label class="chk-label">
+              <input type="checkbox" data-group="hardware" checked />
+              <span>Vérin TecTake &amp; Charnières</span>
+            </label>
+            <label class="chk-label">
+              <input type="checkbox" data-group="trolley" checked />
+              <span>Socle Plantes à Roulettes (Démo)</span>
+            </label>
+          </div>
+
+          <div class="mechanisms-box">
+            <div class="mech-control">
+              <div class="mech-header">
+                <span>🌡️ Vérin Auto (Poussée Directe Haut)</span>
+                <strong id="val-vent-angle">0° (0 mm)</strong>
+              </div>
+              <input type="range" id="slider-vent-angle" min="0" max="12" step="0.5" value="0" />
+              <div class="mech-quick-btns">
+                <button class="mini-btn" data-vent="0">Frais (0 mm)</button>
+                <button class="mini-btn" data-vent="6">24°C (+45 mm)</button>
+                <button class="mini-btn" data-vent="12">Max (+90 mm)</button>
+              </div>
+            </div>
+
+            <div class="mech-control">
+              <div class="mech-header">
+                <span>🖐️ Ouverture Manuelle (Par le Haut)</span>
+                <strong id="val-roof-angle">Posé sur vérin</strong>
+              </div>
+              <input type="range" id="slider-roof-angle" min="0" max="73.3" step="0.5" value="0" />
+              <div class="mech-quick-btns">
+                <button class="mini-btn" data-roof="0">Posé (0°)</button>
+                <button class="mini-btn" data-roof="35">Arrosage (35°)</button>
+                <button class="mini-btn" data-roof="73.3">Toit Vertical (90°)</button>
+              </div>
+            </div>
+
+            <div class="mech-control">
+              <div class="mech-header">
+                <span>🚪 Dépose Côtés Amovibles</span>
+                <strong id="val-sides-offset">En place (0 mm)</strong>
+              </div>
+              <input type="range" id="slider-sides-offset" min="0" max="600" step="10" value="0" />
+              <div class="mech-quick-btns">
+                <button class="mini-btn" data-sides="0">Fermés</button>
+                <button class="mini-btn" data-sides="250">Déboîtés</button>
+                <button class="mini-btn" data-sides="600">Contre le mur (90°)</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 2 : Outil de Mesure 3D -->
+        <section class="panel-section">
+          <h3 class="section-title">📏 Outil de Mesure 3D</h3>
+          <div class="toggle-row">
+            <button id="btn-panel-measure" class="toggle-btn">Activer Mesure (M)</button>
+            <button id="btn-clear-measures" class="mini-btn danger" title="Supprimer toutes les mesures">Tout effacer</button>
+          </div>
+          <label class="chk-label mt-6">
+            <input type="checkbox" id="chk-global-dims" checked />
+            <span>Cotes d'encombrement globales</span>
+          </label>
+          <label class="chk-label">
+            <input type="checkbox" id="chk-xray-poly" />
+            <span>Mesurer à travers le polycarbonate</span>
+          </label>
+          <div id="measurements-list" class="measurements-list">
+            <div class="empty-note">Aucune mesure active. Cliquez sur « Activer Mesure (M) » puis clic gauche sur 2 points.</div>
+          </div>
+        </section>
+
+        <!-- Section 3 : Vue Éclatée -->
+        <section class="panel-section">
+          <div class="section-header-inline">
+            <h3 class="section-title">💥 Vue Éclatée (Assemblage)</h3>
+            <strong id="val-explode" class="accent-val">0%</strong>
+          </div>
+          <input type="range" id="slider-explode" min="0" max="100" step="1" value="0" />
+        </section>
+
+        <!-- Section 4 : Coupe CAD Dynamique (Stencil) -->
+        <section class="panel-section">
+          <div class="section-header-inline">
+            <h3 class="section-title">🔪 Coupe CAD Dynamique</h3>
+            <label class="switch-label">
+              <input type="checkbox" id="chk-section-active" />
+              <span>Activer</span>
+            </label>
+          </div>
+          <div class="axis-selector">
+            <button class="axis-btn active" data-axis="X">X (Largeur)</button>
+            <button class="axis-btn" data-axis="Y">Y (Profondeur)</button>
+            <button class="axis-btn" data-axis="Z">Z (Hauteur)</button>
+            <button id="btn-section-flip" class="axis-flip-btn" title="Inverser le sens de coupe">⇄</button>
+          </div>
+          <div class="slider-with-val">
+            <input type="range" id="slider-section-pos" min="-1050" max="1050" step="5" value="0" disabled />
+            <span id="val-section-pos" class="mono-val">0 mm</span>
+          </div>
+        </section>
+
+        <!-- Section 5 : Vues Normalisées -->
+        <section class="panel-section">
+          <h3 class="section-title">🎥 Vues Normalisées</h3>
+          <div class="views-grid">
+            <button class="view-btn" data-view="iso">Isométrique</button>
+            <button class="view-btn" data-view="front">Face (Avant)</button>
+            <button class="view-btn" data-view="top">Dessus (Z)</button>
+            <button class="view-btn" data-view="side">Profil (Côté)</button>
+            <button class="view-btn span-2" data-view="reset">🔄 Réinitialiser Caméra &amp; Filtres</button>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <!-- 7. MODALE : PLAN DE DÉCOUPE (CALEPINAGE) -->
+    <div id="modal-cutlist" class="modal-backdrop hidden">
+      <div class="modal-window modal-xl">
+        <div class="modal-header">
+          <div>
+            <h2>🪚 Plan de Découpe Optimisé (Calepinage 1D &amp; 2D) — Trait de scie 4 mm</h2>
+            <p class="modal-subtitle">
+              14 Lames terrasse 2400×145×27 mm (En stock) • 6 Lambourdes 2400×70×45 mm (4 en stock + 2 à acheter) • 1 Plaque Polycarbonate 2000×980×10 mm (En stock)
+            </p>
+          </div>
+          <div class="modal-header-actions">
+            <button id="btn-print-cutlist" class="action-btn accent-btn">
+              🖨️ Imprimer le Plan d'Atelier (A4 Paysage)
+            </button>
+            <button class="btn-modal-close" data-close="modal-cutlist">✕</button>
+          </div>
+        </div>
+        <div id="cutlist-modal-body" class="modal-body"></div>
+      </div>
+    </div>
+
+    <!-- 8. MODALE : NOMENCLATURE & FICHE TECHNIQUE -->
+    <div id="modal-bom" class="modal-backdrop hidden">
+      <div class="modal-window modal-xl">
+        <div class="modal-header">
+          <div>
+            <h2>📋 Nomenclature Complète &amp; Fiche Technique d'Atelier</h2>
+            <p class="modal-subtitle">Cliquez sur « 📐 Voir 2D » pour inspecter la pièce en 3D et ouvrir son plan coté.</p>
+          </div>
+          <div class="modal-header-actions">
+            <button class="btn-modal-close" data-close="modal-bom">✕</button>
+          </div>
+        </div>
+        <div id="bom-modal-body" class="modal-body"></div>
+      </div>
+    </div>
+
+    <!-- MODALE D'AIDE -->
+    <div id="modal-help" class="modal-backdrop hidden">
+      <div class="modal-window modal-md">
+        <div class="modal-header">
+          <h2>💡 Guide d'utilisation — Atelier CAD</h2>
+          <button class="btn-modal-close" data-close="modal-help">✕</button>
+        </div>
+        <div class="modal-body help-content">
+          <h4>Contrôles Caméra 3D</h4>
+          <ul>
+            <li><strong>Clic Gauche + Glisser</strong> : Rotation orbitale autour de la serre.</li>
+            <li><strong>Clic Droit + Glisser</strong> : Déplacement panoramique (Pan).</li>
+            <li><strong>Molette</strong> : Zoom avant / arrière.</li>
+            <li><strong>Clic Gauche sur une pièce</strong> : Sélectionne la pièce et ouvre son plan 2D coté à gauche.</li>
+          </ul>
+          <h4>Outil de Mesure 3D (Touche <code>M</code>)</h4>
+          <ul>
+            <li><strong>Clic Gauche (1er)</strong> : Pose le point A (aimantation Or sur les coins/intersections de coupe, Cyan sur les faces).</li>
+            <li><strong>Clic Gauche (2ème)</strong> : Pose le point B et fige la cote en mm.</li>
+            <li><strong>Touche <code>Échap</code></strong> : Annule le point A en cours.</li>
+            <li><strong>Clic Droit</strong> : Toujours réservé au déplacement panoramique de la caméra (ne perturbe jamais la mesure).</li>
+          </ul>
+          <h4>Conception de la Serre (1900 × 500 mm)</h4>
+          <ul>
+            <li><strong>Astuce Zéro-Perte Lames (2400 mm)</strong> : 13 lames brutes de 2400 mm donnent chacune 1 lame de façade (1900 mm) + 1 lame de côté (496 mm, trait de scie 4 mm inclus).</li>
+            <li><strong>Plaque Polycarbonate (2000 × 980 mm)</strong> : Une seule coupe longitudinale donne le Toit (2000 × 660 mm) + la Fenêtre Avant haute (1900 × 300 mm).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENEUR D'IMPRESSION A4 PAYSAGE (@media print uniquement) -->
+  <div id="print-sheet" class="print-only"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
