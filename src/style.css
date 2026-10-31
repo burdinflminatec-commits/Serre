@@ -1043,6 +1043,145 @@ input[type="range"] {
   color: #cbd5e1;
 }
 
+/* ÉCRAN DE VERROUILLAGE CODE PIN */
+.pin-lock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: radial-gradient(circle at 50% 35%, #162235 0%, #090d14 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.pin-lock-overlay.hidden {
+  display: none !important;
+}
+
+.pin-card {
+  width: 100%;
+  max-width: 340px;
+  background: rgba(17, 24, 39, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 18px;
+  padding: 26px 24px 22px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+}
+
+.pin-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.pin-card h2 {
+  font-size: 17px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.pin-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  margin-bottom: 18px;
+}
+
+.pin-dots {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.pin-dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid #475569;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+.pin-dot.filled {
+  background: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.65);
+}
+
+.pin-dot.error {
+  background: var(--accent-red);
+  border-color: var(--accent-red);
+}
+
+.pin-error {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f87171;
+  margin-bottom: 10px;
+}
+
+.pin-error.hidden {
+  display: none;
+}
+
+.pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 14px 0 16px;
+}
+
+.pin-key {
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(30, 41, 59, 0.85);
+  color: #f8fafc;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s, transform 0.08s;
+}
+
+.pin-key:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(51, 65, 85, 0.95);
+}
+
+.pin-key:active {
+  transform: scale(0.95);
+  background: var(--accent-cyan);
+  color: #0f172a;
+}
+
+.pin-key.fn-key {
+  font-size: 15px;
+  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.pin-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pin-remember input {
+  accent-color: var(--accent-cyan);
+  width: 15px;
+  height: 15px;
+}
+
 /* MODE IMPRESSION ATELIER A4 PAYSAGE */
 .print-only {
   display: none;

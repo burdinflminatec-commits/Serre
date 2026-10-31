@@ -7,6 +7,44 @@
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
+  <!-- ÉCRAN DE VERROUILLAGE PAR CODE PIN (AVEC MÉMORISATION LOCALSTORAGE) -->
+  <div id="pin-lock-overlay" class="pin-lock-overlay no-print">
+    <div class="pin-card">
+      <div class="pin-icon">🔒</div>
+      <h2>Accès Atelier CAD — Serre 3D</h2>
+      <p class="pin-subtitle">Entrez votre code PIN à 4 chiffres pour déverrouiller</p>
+
+      <div id="pin-dots" class="pin-dots">
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+      </div>
+
+      <div id="pin-error" class="pin-error hidden">Code PIN incorrect</div>
+
+      <div class="pin-keypad">
+        <button type="button" class="pin-key" data-digit="1">1</button>
+        <button type="button" class="pin-key" data-digit="2">2</button>
+        <button type="button" class="pin-key" data-digit="3">3</button>
+        <button type="button" class="pin-key" data-digit="4">4</button>
+        <button type="button" class="pin-key" data-digit="5">5</button>
+        <button type="button" class="pin-key" data-digit="6">6</button>
+        <button type="button" class="pin-key" data-digit="7">7</button>
+        <button type="button" class="pin-key" data-digit="8">8</button>
+        <button type="button" class="pin-key" data-digit="9">9</button>
+        <button type="button" class="pin-key fn-key" data-action="clear" title="Effacer">C</button>
+        <button type="button" class="pin-key" data-digit="0">0</button>
+        <button type="button" class="pin-key fn-key" data-action="back" title="Retour">⌫</button>
+      </div>
+
+      <label class="pin-remember">
+        <input type="checkbox" id="chk-pin-remember" checked />
+        <span>Garder ma session active sur cet appareil</span>
+      </label>
+    </div>
+  </div>
+
   <!-- INTERFACE ECRAN ATELIER CAD -->
   <div id="app" class="app-layout no-print">
     <!-- 1. BARRE D'EN-TÊTE -->
@@ -37,6 +75,9 @@
         </button>
         <button id="btn-top-help" class="action-btn icon-only" title="Aide &amp; Raccourcis clavier">
           ?
+        </button>
+        <button id="btn-top-lock" class="action-btn icon-only" title="Verrouiller la session (Code PIN)">
+          🔒
         </button>
       </div>
     </header>

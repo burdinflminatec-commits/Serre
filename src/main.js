@@ -10,6 +10,126 @@ import { renderCutlistModal } from './ui/cutlistModal.js';
 import { renderBomModal } from './ui/bomModal.js';
 
 // ============================================================================
+// VERROUILLAGE PAR CODE PIN & MÉMORISATION NAVIGATEUR (LOCALSTORAGE)
+// ============================================================================
+const PIN_STORAGE_KEY = 'serre_cad_pin_auth_v1';
+const EXPECTED_PIN_HASH = 'a1f16d7840814920'; // Empreinte salée (jamais stockée en clair)
+
+function computePinHash(pin) {
+  const s = `SERRE_CAD_SALT_2026::${pin}::ATELIER`;
+  let h1 = 0xdeadbeef ^ s.length;
+  let h2 = 0x41c6ce57 ^ s.length;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
+}
+
+const pinOverlay = document.getElementById('pin-lock-overlay');
+const pinDots = Array.from(document.querySelectorAll('#pin-dots .pin-dot'));
+const pinError = document.getElementById('pin-error');
+const chkPinRemember = document.getElementById('chk-pin-remember');
+let enteredPin = '';
+let isPinUnlocked = false;
+
+function checkSavedPinSession() {
+  try {
+    if (localStorage.getItem(PIN_STORAGE_KEY) === EXPECTED_PIN_HASH) {
+      isPinUnlocked = true;
+      pinOverlay.classList.add('hidden');
+    }
+  } catch (_) {
+    // Ignore storage errors in private mode
+  }
+}
+
+function updatePinDotsUI(isError = false) {
+  pinDots.forEach((dot, idx) => {
+    dot.classList.toggle('filled', idx < enteredPin.length && !isError);
+    dot.classList.toggle('error', isError);
+  });
+}
+
+function handlePinDigit(digit) {
+  if (isPinUnlocked || enteredPin.length >= 4) return;
+  pinError.classList.add('hidden');
+  enteredPin += digit;
+  updatePinDotsUI(false);
+
+  if (enteredPin.length === 4) {
+    const candidateHash = computePinHash(enteredPin);
+    if (candidateHash === EXPECTED_PIN_HASH) {
+      isPinUnlocked = true;
+      if (chkPinRemember && chkPinRemember.checked) {
+        try {
+          localStorage.setItem(PIN_STORAGE_KEY, EXPECTED_PIN_HASH);
+        } catch (_) {}
+      }
+      setTimeout(() => {
+        pinOverlay.classList.add('hidden');
+        enteredPin = '';
+        updatePinDotsUI(false);
+      }, 120);
+    } else {
+      pinError.classList.remove('hidden');
+      updatePinDotsUI(true);
+      setTimeout(() => {
+        enteredPin = '';
+        updatePinDotsUI(false);
+      }, 450);
+    }
+  }
+}
+
+document.querySelectorAll('.pin-key').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const digit = btn.getAttribute('data-digit');
+    const action = btn.getAttribute('data-action');
+    if (digit !== null) {
+      handlePinDigit(digit);
+    } else if (action === 'clear') {
+      enteredPin = '';
+      updatePinDotsUI(false);
+    } else if (action === 'back') {
+      enteredPin = enteredPin.slice(0, -1);
+      updatePinDotsUI(false);
+    }
+  });
+});
+
+window.addEventListener('keydown', (e) => {
+  if (isPinUnlocked) return;
+  if (e.key >= '0' && e.key <= '9') {
+    e.preventDefault();
+    handlePinDigit(e.key);
+  } else if (e.key === 'Backspace') {
+    e.preventDefault();
+    enteredPin = enteredPin.slice(0, -1);
+    updatePinDotsUI(false);
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    enteredPin = '';
+    updatePinDotsUI(false);
+  }
+});
+
+document.getElementById('btn-top-lock')?.addEventListener('click', () => {
+  try {
+    localStorage.removeItem(PIN_STORAGE_KEY);
+  } catch (_) {}
+  isPinUnlocked = false;
+  enteredPin = '';
+  updatePinDotsUI(false);
+  pinOverlay.classList.remove('hidden');
+});
+
+checkSavedPinSession();
+
+// ============================================================================
 // INITIALISATION DU BUREAU D'ÉTUDES & ATELIER CAD 3D
 // ============================================================================
 
