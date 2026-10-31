@@ -1,5 +1,8 @@
 # 🌱 Serre Bois & Polycarbonate (1900 × 500 mm) — Bureau d'Études & Atelier CAD 3D
 
+👉 **[OUVRIR L'APPLICATION 3D EN LIGNE (PC / Android / Mobile)](https://burdinflminatec-commits.github.io/Serre/)**  
+*(Lien direct GitHub Pages : `https://burdinflminatec-commits.github.io/Serre/`)*
+
 Application web 3D interactive de conception, d'assemblage et de calepinage d'atelier pour la serre en bois (Pin Vert Classe 4) et polycarbonate alvéolaire (`1900 × 500 × 1195 mm`).
 
 ## 🚀 Utilisation directe (100 % autonome sans serveur)
