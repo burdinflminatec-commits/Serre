@@ -83,7 +83,7 @@ export const PARTS_CATALOG = {
       { x: 1820, y: 35, d: 5 },
       { x: 1820, y: 110, d: 5 }
     ],
-    notes: '✅ P03 #1 à #4 déjà coupées (les 4 dernières de vos 12 × 190 cm) • 🪚 P03 #5 à couper (1900 mm) dans la 1ère lame entière de 2400 mm.'
+    notes: '✅ P03 #1 à #4 (Rangs 1 à 4, déjà coupées) en bas • 🪚 P03 #5 (à couper dans la 1ère lame entière) placée tout en HAUT (Rang 7, Z=900..1045 mm) pour encadrer la fenêtre P09 et porter les 3 charnières Q01.'
   },
 
   P04: {
@@ -104,9 +104,10 @@ export const PARTS_CATALOG = {
       { x: 222, y: 35, d: 5 },
       { x: 372, y: 35, d: 5 },
       { x: 522, y: 35, d: 5 },
-      { x: 672, y: 35, d: 5 },
-      { x: 785, y: 35, d: 5 },
-      { x: 1005, y: 35, d: 5 }
+      { x: 635, y: 35, d: 5 },
+      { x: 860, y: 35, d: 5 },
+      { x: 935, y: 35, d: 5 },
+      { x: 1010, y: 35, d: 5 }
     ],
     notes: '🪚 P04 #1 (1045 mm) pris dans le reste (1216 mm) de votre lambourde entière après P02 #3 • 🛒 P04 #2 et #3 (2 × 1045 mm) pris dans la 1ère lambourde à racheter.'
   },
@@ -210,7 +211,7 @@ export const PARTS_CATALOG = {
 
   P09: {
     partId: 'P09',
-    name: 'Fenêtre Avant Polycarbonate (Rangs 6-7)',
+    name: 'Fenêtre Avant Polycarbonate (Rangs 5-6)',
     category: 'Vitrage Polycarbonate',
     group: 'frontWall',
     materialType: 'polycarbonate',
@@ -229,7 +230,7 @@ export const PARTS_CATALOG = {
       { x: 1820, y: 40, d: 5 },
       { x: 1820, y: 260, d: 5 }
     ],
-    notes: 'Issu de la chute de 316 mm de la plaque de toit. Laisse entrer la lumière en façade.'
+    notes: 'Placée aux Rangs 5-6 (Z=597.5..897.5 mm), encadrée entre la lame basse P03 #4 (Rang 4) et la lame haute P03 #5 (Rang 7) qui porte les charnières.'
   },
 
   P10: {
@@ -246,14 +247,14 @@ export const PARTS_CATALOG = {
     thickness: 10,
     shapeType: 'rect_board',
     holes: [
-      { x: 110, y: 100, d: 5 },
-      { x: 150, y: 100, d: 5 },
-      { x: 980, y: 100, d: 5 },
-      { x: 1020, y: 100, d: 5 },
-      { x: 1850, y: 100, d: 5 },
-      { x: 1890, y: 100, d: 5 }
+      { x: 110, y: 74, d: 5 },
+      { x: 150, y: 74, d: 5 },
+      { x: 980, y: 74, d: 5 },
+      { x: 1020, y: 74, d: 5 },
+      { x: 1850, y: 74, d: 5 },
+      { x: 1890, y: 74, d: 5 }
     ],
-    notes: 'Conserve la longueur 2000 mm (débords G/D de 23 mm) et 660 mm de rampant. 6 perçages Ø5 mm (Y=100 mm) alignés sur les 3 charnières Q01.'
+    notes: 'Conserve la longueur 2000 mm (débords G/D de 23 mm) et 660 mm de rampant. 6 perçages Ø5 mm (Y=74 mm) alignés sur les 3 charnières Q01.'
   },
 
   P11: {
@@ -286,16 +287,17 @@ export const PARTS_CATALOG = {
     stockSource: '2ème Lambourde à racheter (70×45 mm)',
     stockStatus: 'to_buy',
     qty: 1,
-    length: 370,
+    length: 372,
+    spanY: 356,
     width: 70,
     thickness: 45,
     slopeDeg: 16.7,
     shapeType: 'sloped_brace',
     holes: [
       { x: 25, y: 35, d: 5 },
-      { x: 345, y: 35, d: 5 }
+      { x: 347, y: 35, d: 5 }
     ],
-    notes: '🛒 Unique traverse centrale (X=0, entraxe horizontal 356 mm / longueur rampante 370 mm, coupes d’extrémité parallèles à 16.7°) reliant P04 #2 à P02 #2 sous le toit.'
+    notes: '🛒 Traverse centrale (X=0, entraxe horizontal 356 mm / longueur rampante 372 mm) avec coupes verticales d’aplomb (16.7°) plaquées sans jeu contre P04 #2 (Z_haut=1038) et P02 #2 (Z_haut=1145).'
   },
 
   P13: {
@@ -308,16 +310,17 @@ export const PARTS_CATALOG = {
     stockStatus: 'to_buy',
     qty: 2,
     length: 320,
+    spanY: 306,
     width: 70,
     thickness: 45,
     slopeDeg: 16.7,
     shapeType: 'sloped_brace',
     holes: [
       { x: 30, y: 35, d: 5 },
-      { x: 140, y: 35, d: 5 },
-      { x: 280, y: 35, d: 5 }
+      { x: 160, y: 35, d: 5 },
+      { x: 290, y: 35, d: 5 }
     ],
-    notes: '🛒 Relie les faces internes des montants P08 et P07 (entraxe horizontal 306 mm / longueur rampante 320 mm, coupes parallèles à 16.7°) sur chaque côté amovible pour soutenir la lame en biais P06.'
+    notes: '🛒 Relie les faces internes des montants P08 (Z_haut=1030 mm) et P07 (Z_haut=1155 mm) avec coupes verticales d’aplomb (16.7°, entraxe 306 mm / rampant 320 mm) juste derrière la lame en pente P06.'
   },
 
   Q01: {
@@ -339,7 +342,7 @@ export const PARTS_CATALOG = {
       { x: 20, y: 45, d: 5 },
       { x: 60, y: 45, d: 5 }
     ],
-    notes: 'Charnon fixe (80×30 mm) vissé à plat sur le sommet des 3 montants AVANT P04 (Z=1045) • Gond Ø8 mm coaxial (Y=-223, Z=1050.5) • Charnon mobile (80×30 mm) boulonné sous le toit P10.'
+    notes: 'Charnon fixe (80×30 mm) vissé verticalement en haut de la 5ème lame avant P03 #5 (Rang 7, Z=1015..1045) • Gond Ø8 mm sur l’arête haute (Y=-248, Z=1046.5) • Charnon mobile boulonné sous le toit P10.'
   },
 
   Q02: {
@@ -402,7 +405,7 @@ export const STOCK_CUTLIST = {
       status: 'to_cut',
       statusBadge: '🪚 À couper • 0 chute',
       cuts: [
-        { partId: 'P03', instanceLabel: 'P03 #5 • Avant R5', length: 1900, startX: 0 },
+        { partId: 'P03', instanceLabel: 'P03 #5 • Avant R7 (Haut)', length: 1900, startX: 0 },
         { partId: 'P05', instanceLabel: 'P05 #7 • Côté G R7', length: 496, startX: 1904 }
       ],
       offcut: 0

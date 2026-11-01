@@ -60,7 +60,7 @@ export function renderPieceInspector2D(partId, containerEl) {
     `;
     bottomNote = `🪚 Diag. ${hypLen} mm (${part.slopeDeg}°) • Arrière 145 → Avant 0 mm`;
   } else if (part.shapeType === 'sloped_brace') {
-    const skewPx = Math.min(Math.round(drawH * Math.tan((part.slopeDeg * Math.PI) / 180)), 20);
+    const skewPx = Math.min(Math.round(drawH * Math.tan((part.slopeDeg * Math.PI) / 180)), 22);
     const p1 = `${x0 + skewPx},${y0}`;
     const p2 = `${x0 + drawW},${y0}`;
     const p3 = `${x0 + drawW - skewPx},${y0 + drawH}`;
@@ -70,7 +70,8 @@ export function renderPieceInspector2D(partId, containerEl) {
       <line x1="${x0 + skewPx}" y1="${y0}" x2="${x0}" y2="${y0 + drawH}" stroke="#f59e0b" stroke-width="2.2" />
       <line x1="${x0 + drawW}" y1="${y0}" x2="${x0 + drawW - skewPx}" y2="${y0 + drawH}" stroke="#f59e0b" stroke-width="2.2" />
     `;
-    bottomNote = `🪚 Coupes parallèles ∠ ${part.slopeDeg}° aux 2 extrémités`;
+    const spanText = part.spanY ? `Entraxe ${part.spanY} mm • ` : '';
+    bottomNote = `🪚 ${spanText}Coupes d’aplomb parallèles ∠ ${part.slopeDeg}°`;
   } else if (part.shapeType === 'hinge_plate') {
     const midY = Math.round(y0 + drawH / 2);
     const segW = drawW / 5;
@@ -84,14 +85,14 @@ export function renderPieceInspector2D(partId, containerEl) {
       <!-- Charnon Mobile (Haut - Toit P10) -->
       <rect x="${x0}" y="${y0}" width="${drawW}" height="${drawH / 2 - 4}" fill="rgba(56, 189, 248, 0.16)" stroke="#38bdf8" stroke-width="1.6" />
       <text x="${x0 + drawW / 2}" y="${y0 + 13}" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="9" font-weight="bold">Charnon Mobile (Sous-Toit P10)</text>
-      <!-- Charnon Fixe (Bas - Sommet P04) -->
+      <!-- Charnon Fixe (Bas - Lame Haute P03 #5) -->
       <rect x="${x0}" y="${midY + 4}" width="${drawW}" height="${drawH / 2 - 4}" fill="rgba(203, 213, 225, 0.25)" stroke="#f8fafc" stroke-width="1.6" />
-      <text x="${x0 + drawW / 2}" y="${y0 + drawH - 6}" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9" font-weight="bold">Charnon Fixe (Sommet P04)</text>
+      <text x="${x0 + drawW / 2}" y="${y0 + drawH - 6}" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9" font-weight="bold">Charnon Fixe (Haut Lame P03 #5)</text>
       <!-- Axe / Gond central à 5 charnons -->
       <line x1="${x0 - 8}" y1="${midY}" x2="${x0 + drawW + 8}" y2="${midY}" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" />
       ${knucklesSvg}
     `;
-    bottomNote = `Axe Ø8 mm coaxial (2 × 30 mm) • 4 × Ø5 mm (X=20, 60)`;
+    bottomNote = `Axe Ø8 mm sur arête P03 #5 • 4 × Ø5 mm (X=20, 60)`;
   } else {
     const fillCol =
       part.materialType === 'polycarbonate'

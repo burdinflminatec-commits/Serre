@@ -91,6 +91,40 @@ function createBeveledPostGeometry(widthX, thicknessY, hAtMinY, hAtMaxY) {
 }
 
 /**
+ * Crée une traverse inclinée (P12 / P13) avec coupes d'extrémité verticales (coupes d'aplomb)
+ * plaquées parfaitement sans jeu ni collision contre les faces internes verticales des montants.
+ */
+function createSlopedBraceGeometry(spanY, perpHeight, widthX, zTopAtMinY, zTopAtMaxY) {
+  const shape = new THREE.Shape();
+  const hy = spanY / 2;
+  const slopeRad = Math.atan2(zTopAtMaxY - zTopAtMinY, spanY);
+  const vertH = perpHeight / Math.cos(slopeRad);
+
+  // Profil 2D dans le plan (Y_cad, Z_cad) : faces extrêmes 100% verticales en Y = -hy et Y = +hy
+  shape.moveTo(-hy, zTopAtMinY - vertH);
+  shape.lineTo(hy, zTopAtMaxY - vertH);
+  shape.lineTo(hy, zTopAtMaxY);
+  shape.lineTo(-hy, zTopAtMinY);
+  shape.closePath();
+
+  const geom = new THREE.ExtrudeGeometry(shape, {
+    depth: widthX,
+    bevelEnabled: false
+  });
+
+  // Réaligner vers Three.js : x = X_cad (-widthX/2..+widthX/2), y = Z_cad, z = -Y_cad
+  const pos = geom.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const sy = pos.getX(i); // Y_cad (-hy .. +hy)
+    const sz = pos.getY(i); // Z_cad
+    const sx = pos.getZ(i) - widthX / 2; // X_cad (-widthX/2 .. +widthX/2)
+    pos.setXYZ(i, sx, sz, -sy);
+  }
+  geom.computeVertexNormals();
+  return geom;
+}
+
+/**
  * Crée la 8ème lame supérieure de pignon (P06) coupée en pente de 145 mm (arrière) à 0 mm (avant)
  */
 function createSlopedGableBoardGeometry(lengthY, maxHeightZ, thicknessX, holes = [], isLite = false) {
@@ -256,12 +290,9 @@ export function buildSerreAssembly(materials, isLite = false) {
     groups.backWall.add(mesh);
   });
 
-  // Unique Traverse Haute Centrale P12 (370 × 70 × 45 mm à X=0) reliant P04 #2 (Avant) et P02 #2 (Arrière)
-  // Plaquée sous la pente du toit (16.7°) entre Y_cad = -178 et Y_cad = +178, sans rien au sol !
-  const geomP12 = createExtrudedBoardGeometry(370, 70, 45, PARTS_CATALOG.P12.holes, isLite);
-  geomP12.rotateY(Math.PI / 2);
-  geomP12.rotateZ(Math.PI / 2);
-  geomP12.rotateX(ROOF_SLOPE_RAD);
+  // Unique Traverse Haute Centrale P12 (370 × 70 × 45 mm à X=0) reliant P04 #2 (Avant, Y=-178) et P02 #2 (Arrière, Y=+178)
+  // Coupes d'aplomb verticales aux 2 extrémités (sans collision dans P04/P02) et plaquée sous les traverses P11 (Z_top = 1038 -> 1144.8 mm)
+  const geomP12 = createSlopedBraceGeometry(356, 70, 45, 1038, 1144.8);
 
   const meshP12 = buildPartMesh({
     geometry: geomP12,
@@ -275,16 +306,17 @@ export function buildSerreAssembly(materials, isLite = false) {
     solidMeshes,
     partMeshes
   });
-  meshP12.position.copy(cadToThree(0, 0, 1060));
+  meshP12.position.copy(cadToThree(0, 0, 0));
   meshP12.userData.basePosition.copy(meshP12.position);
   groups.backWall.add(meshP12);
 
   // ==========================================================================
-  // 2. FAÇADE AVANT : 5 Lames P03 + Fenêtre Poly P09 + 3 Montants P04
+  // 2. FAÇADE AVANT : 4 Lames basses P03 (R1-R4) + Fenêtre Poly P09 (R5-R6) + 1 Lame haute P03 #5 (R7) + 3 Montants P04
   // ==========================================================================
   const geomP03 = createExtrudedBoardGeometry(1900, 145, 27, PARTS_CATALOG.P03.holes, isLite);
-  for (let r = 0; r < 5; r++) {
-    const zBottom = r * 150;
+  const frontSlatRows = [0, 1, 2, 3, 6]; // Rangs 1 à 4 en bas (Z=0..595) + Rang 7 tout en haut (Z=900..1045, bandeau support charnières)
+  frontSlatRows.forEach((rowIdx, idx) => {
+    const zBottom = rowIdx * 150;
     const zCenter = zBottom + 145 / 2;
     const yCenter = -250 + 27 / 2; // Y_cad = -236.5 mm
 
@@ -293,9 +325,9 @@ export function buildSerreAssembly(materials, isLite = false) {
       material: materials.wood_deck,
       edgeMaterial: materials.edge_line,
       partId: 'P03',
-      instanceId: `P03 #${r + 1}`,
+      instanceId: `P03 #${idx + 1} (Rang ${rowIdx + 1})`,
       subGroup: 'frontWall',
-      explodeVecCad: { x: 0, y: -260 - r * 12, z: (r - 2) * 18 },
+      explodeVecCad: { x: 0, y: -260 - idx * 12, z: (rowIdx - 2.5) * 18 },
       isLite,
       solidMeshes,
       partMeshes
@@ -303,24 +335,24 @@ export function buildSerreAssembly(materials, isLite = false) {
     mesh.position.copy(cadToThree(0, yCenter, zCenter));
     mesh.userData.basePosition.copy(mesh.position);
     groups.frontWall.add(mesh);
-  }
+  });
 
-  // Fenêtre Polycarbonate Avant P09 (1900 × 300 × 10 mm, couvre Z=745..1045, Y=-228)
+  // Fenêtre Polycarbonate Avant P09 (1900 × 300 × 10 mm, encadrée entre Rang 4 Z=595 et Rang 7 Z=900, Y=-228)
   const geomP09 = createExtrudedBoardGeometry(1900, 300, 10, PARTS_CATALOG.P09.holes, isLite);
   const meshP09 = buildPartMesh({
     geometry: geomP09,
     material: materials.polycarbonate,
     edgeMaterial: materials.edge_poly,
     partId: 'P09',
-    instanceId: 'P09 #1',
+    instanceId: 'P09 #1 (Fenêtre Avant Rangs 5-6)',
     subGroup: 'frontWall',
-    explodeVecCad: { x: 0, y: -340, z: 80 },
+    explodeVecCad: { x: 0, y: -340, z: 40 },
     registerSolid: false,
     isLite,
     solidMeshes,
     partMeshes
   });
-  meshP09.position.copy(cadToThree(0, -228, 745 + 150));
+  meshP09.position.copy(cadToThree(0, -228, 597.5 + 150));
   meshP09.userData.basePosition.copy(meshP09.position);
   groups.frontWall.add(meshP09);
 
@@ -357,10 +389,8 @@ export function buildSerreAssembly(materials, isLite = false) {
   const geomP07 = createBeveledPostGeometry(45, 70, 1155, 1155);
   const geomP08 = createBeveledPostGeometry(45, 70, 1030, 1030);
 
-  // Traverse inclinée P13 (320 × 70 × 45 mm) entre les sommets de P08 et P07 pour tenir la lame en pente P06
-  const geomP13 = createExtrudedBoardGeometry(320, 70, 45, PARTS_CATALOG.P13.holes, isLite);
-  geomP13.rotateY(Math.PI / 2);
-  geomP13.rotateX(ROOF_SLOPE_RAD);
+  // Traverse inclinée P13 (entraxe 306 mm, 70 × 45 mm) reliant affleurant le sommet de P08 (Y=-153, Z=1030) au sommet de P07 (Y=+153, Z=1155)
+  const geomP13 = createSlopedBraceGeometry(306, 70, 45, 1030, 1155);
 
   const sidesConfig = [
     {
@@ -454,7 +484,7 @@ export function buildSerreAssembly(materials, isLite = false) {
     meshP08.userData.basePosition.copy(meshP08.position);
     sc.group.add(meshP08);
 
-    // Traverse inclinée P13 entre les sommets de P08 (Y=-153) et P07 (Y=+153) pour tenir P06
+    // Traverse inclinée P13 entre les sommets de P08 (Y=-153, Z=1030) et P07 (Y=+153, Z=1155) pour tenir P06
     const meshP13 = buildPartMesh({
       geometry: geomP13,
       material: materials.wood_post,
@@ -467,23 +497,23 @@ export function buildSerreAssembly(materials, isLite = false) {
       solidMeshes,
       partMeshes
     });
-    meshP13.position.copy(cadToThree(sc.postX, 0, 1088));
+    meshP13.position.copy(cadToThree(sc.postX, 0, 0));
     meshP13.userData.basePosition.copy(meshP13.position);
     sc.group.add(meshP13);
   });
 
   // ==========================================================================
   // 4. TOIT OUVRANT PAR LE HAUT (roofPivot) :
-  // Axe des 3 charnières Q01 à l'AVANT (bas de pente : Y_cad = -223 mm, Z_cad = 1050.5 mm)
-  // Ouverture par le HAUT (arrière : Y_cad = +223..250 mm, Z_cad = 1195 mm)
-  // Sous-face de la plaque polycarbonate P10 à y_loc = +3.5 mm (plaquée sur les charnons mobiles Q01)
+  // Axe des 3 charnières Q01 sur l'arête supérieure avant de la 5ème lame P03 #5 (Y_cad = -248 mm, Z_cad = 1046.5 mm)
+  // Charnon fixe vissé à plat verticalement sur la face avant haute de P03 #5 (Rang 7, Z = 1015..1045 mm)
+  // Charnon mobile incliné à 16.7° boulonné sous la plaque de toit P10
   // ==========================================================================
-  const HINGE_Y_CAD = -223;
-  const HINGE_Z_CAD = 1050.5;
+  const HINGE_Y_CAD = -248;
+  const HINGE_Z_CAD = 1046.5;
   const frontHingePivotThree = cadToThree(0, HINGE_Y_CAD, HINGE_Z_CAD);
   groups.roofPivot.position.copy(frontHingePivotThree);
 
-  // Groupe interne incliné de base à +16.7° (monte de l'avant z=+223 vers l'arrière z=-250)
+  // Groupe interne incliné de base à +16.7° (monte de l'avant vers l'arrière)
   const roofSlopeGroup = new THREE.Group();
   roofSlopeGroup.rotation.x = ROOF_SLOPE_RAD;
   groups.roofPivot.add(roofSlopeGroup);
@@ -505,7 +535,7 @@ export function buildSerreAssembly(materials, isLite = false) {
     solidMeshes,
     partMeshes
   });
-  meshP10.position.set(0, 8.5, -245);
+  meshP10.position.set(0, 8.5, -271);
   meshP10.userData.basePosition.copy(meshP10.position);
   roofSlopeGroup.add(meshP10);
 
@@ -514,8 +544,8 @@ export function buildSerreAssembly(materials, isLite = false) {
   geomP11.rotateX(-Math.PI / 2);
 
   const slatPositions = [
-    { label: 'P11 #1 (Traverse Sous-Toit Avant)', zRamp: -85 },
-    { label: 'P11 #2 (Traverse Sous-Toit Arrière Vérin)', zRamp: -405 }
+    { label: 'P11 #1 (Traverse Sous-Toit Avant)', zRamp: -111 },
+    { label: 'P11 #2 (Traverse Sous-Toit Arrière Vérin)', zRamp: -431 }
   ];
   slatPositions.forEach((sp) => {
     const meshP11 = buildPartMesh({
@@ -544,9 +574,8 @@ export function buildSerreAssembly(materials, isLite = false) {
     { x: 60, y: 15, d: 5 }
   ];
   const geomQ01FixedLeaf = createExtrudedBoardGeometry(80, 30, 3.5, leafHoles, isLite);
-  geomQ01FixedLeaf.rotateX(-Math.PI / 2);
-  // Posé à plat sur le sommet horizontal de P04 (Z_cad = 1045..1048.5 mm => dy = -5.5..-2.0 mm, dz = 0..-30 mm)
-  geomQ01FixedLeaf.translate(0, -3.75, -15);
+  // Plaqué verticalement contre la face avant extérieure de la lame haute P03 #5 (Y_cad = -250 mm, Z_cad = 1015..1045 mm)
+  geomQ01FixedLeaf.translate(0, -16.5, 3.75);
 
   const geomQ01MovingLeaf = createExtrudedBoardGeometry(80, 30, 3.5, leafHoles, isLite);
   geomQ01MovingLeaf.rotateX(-Math.PI / 2);
@@ -619,13 +648,14 @@ export function buildSerreAssembly(materials, isLite = false) {
       subQ01Meshes.push(kMesh);
     });
 
-    // Têtes de vis inox sur le charnon fixe (vissées verticalement dans le sommet de P04)
+    // Têtes de vis inox sur le charnon fixe (vissées horizontalement dans la face avant de P03 #5 + P04)
     // et boulons/rondelles d'étanchéité traversant le toit P10 sur le charnon mobile
     const screwHeadGeom = new THREE.CylinderGeometry(4.2, 2.5, 1.8, isLite ? 8 : 12);
     const roofBoltCapGeom = new THREE.CylinderGeometry(5.5, 5.5, 2.2, isLite ? 8 : 14);
     [-20, 20].forEach((sx) => {
       const fixedScrew = new THREE.Mesh(screwHeadGeom, materials.metal_dark);
-      fixedScrew.position.set(sx, -1.5, -15);
+      fixedScrew.rotation.x = Math.PI / 2;
+      fixedScrew.position.set(sx, -16.5, 5.8);
       meshQ01.add(fixedScrew);
 
       const movingScrew = new THREE.Mesh(screwHeadGeom, materials.metal_dark);
@@ -747,14 +777,14 @@ export function buildSerreAssembly(materials, isLite = false) {
   geomCatchPlate.rotateY(Math.PI / 2);
 
   const latchConfigs = [
-    // Côté Gauche (4 fermetures Hettich : 2 Avant sur rangs 2 et 5, 2 Arrière sur rangs 2 et 7)
+    // Côté Gauche (4 fermetures Hettich : 2 Avant sur rangs 2 et 7, 2 Arrière sur rangs 2 et 7)
     { side: 'left', dirX: -1, face: 'front', zCad: 222.5, label: 'Q03 #1 (Avant-Gauche Rang 2)' },
-    { side: 'left', dirX: -1, face: 'front', zCad: 672.5, label: 'Q03 #2 (Avant-Gauche Rang 5)' },
+    { side: 'left', dirX: -1, face: 'front', zCad: 972.5, label: 'Q03 #2 (Avant-Gauche Rang 7)' },
     { side: 'left', dirX: -1, face: 'back', zCad: 222.5, label: 'Q03 #3 (Arrière-Gauche Rang 2)' },
     { side: 'left', dirX: -1, face: 'back', zCad: 972.5, label: 'Q03 #4 (Arrière-Gauche Rang 7)' },
-    // Côté Droit (4 fermetures Hettich : 2 Avant sur rangs 2 et 5, 2 Arrière sur rangs 2 et 7)
+    // Côté Droit (4 fermetures Hettich : 2 Avant sur rangs 2 et 7, 2 Arrière sur rangs 2 et 7)
     { side: 'right', dirX: 1, face: 'front', zCad: 222.5, label: 'Q03 #5 (Avant-Droit Rang 2)' },
-    { side: 'right', dirX: 1, face: 'front', zCad: 672.5, label: 'Q03 #6 (Avant-Droit Rang 5)' },
+    { side: 'right', dirX: 1, face: 'front', zCad: 972.5, label: 'Q03 #6 (Avant-Droit Rang 7)' },
     { side: 'right', dirX: 1, face: 'back', zCad: 222.5, label: 'Q03 #7 (Arrière-Droit Rang 2)' },
     { side: 'right', dirX: 1, face: 'back', zCad: 972.5, label: 'Q03 #8 (Arrière-Droit Rang 7)' }
   ];
@@ -921,19 +951,19 @@ export function buildSerreAssembly(materials, isLite = false) {
     const openRad = (effectiveRoofDeg * Math.PI) / 180;
     const ventRad = (ventAngleDeg * Math.PI) / 180;
 
-    // Pivot du toit sur l'axe exact des 3 charnières AVANT (Y=-223, Z=1050.5) -> le HAUT (arrière) se soulève jusqu'à la verticale
+    // Pivot du toit sur l'axe exact des 3 charnières AVANT (Y=-248, Z=1046.5) -> le HAUT (arrière) se soulève jusqu'à la verticale
     const hingeOrigin = cadToThree(0, HINGE_Y_CAD, HINGE_Z_CAD);
     groups.roofPivot.position.copy(hingeOrigin);
     roofSlopeGroup.rotation.x = ROOF_SLOPE_RAD;
-    meshP10.userData.basePosition.set(0, 8.5, -245);
-    roofSlopeGroup.children[1].userData.basePosition.set(0, -10, -85);
-    roofSlopeGroup.children[2].userData.basePosition.set(0, -10, -405);
+    meshP10.userData.basePosition.set(0, 8.5, -271);
+    roofSlopeGroup.children[1].userData.basePosition.set(0, -10, -111);
+    roofSlopeGroup.children[2].userData.basePosition.set(0, -10, -431);
 
     groups.roofPivot.rotation.x = openRad;
 
     // Articulation synchronisée des 3 charnières Q01 :
-    // - Le charnon inférieur reste fixe à plat sur le sommet de P04 (Z=1045..1048.5 mm)
-    // - Le charnon supérieur pivote autour du gond (Y=-223, Z=1050.5) exactement avec le toit (ROOF_SLOPE_RAD + openRad)
+    // - Le charnon inférieur reste fixe verticalement sur le haut de la lame P03 #5 (Rang 7, Z=1015..1045 mm)
+    // - Le charnon supérieur pivote autour du gond (Y=-248, Z=1046.5) exactement avec le toit (ROOF_SLOPE_RAD + openRad)
     hingeMeshes.forEach((hm) => {
       hm.userData.basePosition.copy(cadToThree(hm.userData.xCad, HINGE_Y_CAD, HINGE_Z_CAD));
       if (hm.userData.movingLeafPivot) {
@@ -946,8 +976,8 @@ export function buildSerreAssembly(materials, isLite = false) {
     const bracketZCad = 1122;
     meshQ02.userData.basePosition.copy(cadToThree(58, 165, bracketZCad));
 
-    // Hauteur de la sous-face de la traverse P11 #2 (y_loc = -23.5 mm) à l'aplomb du piston (dist = 405 mm de l'axe charnière)
-    const distFromHinge = 405;
+    // Hauteur de la sous-face de la traverse P11 #2 (y_loc = -23.5 mm) à l'aplomb du piston (dist = 431 mm de l'axe charnière)
+    const distFromHinge = 431;
     const totalSlopeRad = ROOF_SLOPE_RAD + ventRad;
     const roofUndersideY =
       hingeOrigin.y +
