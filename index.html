@@ -100,35 +100,33 @@
         </div>
       </div>
 
-      <!-- 2. VOLET GAUCHE : INSPECTEUR DE PIÈCE 2D -->
+      <!-- 2. VOLET GAUCHE : INSPECTEUR DE PIÈCE 2D COMPACT & ÉPURÉ -->
       <aside id="piece-inspector" class="piece-inspector collapsed">
         <div class="inspector-header">
-          <div class="inspector-meta-top">
-            <span id="insp-category" class="insp-badge">PIÈCE</span>
-            <span id="insp-dims" class="insp-dims-pill">0 × 0 mm</span>
-            <button id="btn-close-inspector" class="btn-icon-close" title="Fermer">✕</button>
-          </div>
           <div class="inspector-title-row">
             <span id="insp-code" class="insp-code">P01</span>
             <h2 id="insp-name" class="insp-name">Pièce</h2>
             <span id="insp-qty" class="insp-qty-badge">×1</span>
+            <button id="btn-close-inspector" class="btn-icon-close" title="Fermer">✕</button>
+          </div>
+          <div class="inspector-meta-sub">
+            <span id="insp-dims" class="insp-dims-pill">0 × 0 × 0 mm</span>
+            <span id="insp-category" class="insp-badge">Brut</span>
           </div>
         </div>
 
         <div id="inspector-svg-container" class="inspector-svg-wrapper"></div>
 
-        <div class="inspector-actions">
-          <button id="btn-insp-cutlist" class="insp-btn primary">
-            🪚 Voir dans Découpe
+        <div class="inspector-actions single-row">
+          <button id="btn-insp-cutlist" class="insp-btn primary" title="Voir sur le plan de découpe">
+            🪚 Découpe
           </button>
-          <div class="insp-actions-row">
-            <button id="btn-insp-isolate" class="insp-btn">
-              👁️ Isoler
-            </button>
-            <button id="btn-insp-center" class="insp-btn">
-              🎯 Centrer
-            </button>
-          </div>
+          <button id="btn-insp-isolate" class="insp-btn" title="Isoler cette pièce en 3D">
+            👁️ Isoler
+          </button>
+          <button id="btn-insp-center" class="insp-btn" title="Centrer la caméra sur cette pièce">
+            🎯 Centrer
+          </button>
         </div>
       </aside>
 

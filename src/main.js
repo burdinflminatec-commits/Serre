@@ -422,8 +422,8 @@ function selectPartByMesh(mesh) {
   selectionBox.visible = true;
 
   // Remplir l'en-tête compact de l'inspecteur 2D
-  inspCategory.textContent = part.category;
-  inspDims.textContent = `${part.length} × ${part.width} mm • Ép. ${part.thickness} mm`;
+  inspCategory.textContent = part.stockSource || part.category;
+  inspDims.textContent = `${part.length} × ${part.width} × ${part.thickness} mm`;
   inspCode.textContent = part.partId;
   inspName.textContent = part.name;
   inspQty.textContent = `×${part.qty}`;

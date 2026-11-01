@@ -1,230 +1,158 @@
 import { PARTS_CATALOG } from '../data/serreData.js';
 
 /**
- * Génère le dessin technique SVG 2D coté en mm pour l'inspecteur de pièce gauche
- * (Zéro texte descriptif verbeux : 100% dessin technique coté)
+ * Génère un dessin technique SVG 2D épuré, lisible et sans chevauchement
+ * pour le volet inspecteur de pièce à gauche.
  */
 export function renderPieceInspector2D(partId, containerEl) {
   const part = PARTS_CATALOG[partId];
   if (!part || !containerEl) return;
 
   if (part.shapeType === 'direct_cylinder' || part.shapeType === 'vent_opener') {
-    containerEl.innerHTML = renderDirectCylinderSvg(part);
+    containerEl.innerHTML = renderDirectCylinderSvg();
     return;
   }
 
   if (part.shapeType === 'toggle_latch') {
-    containerEl.innerHTML = renderToggleLatchSvg(part);
+    containerEl.innerHTML = renderToggleLatchSvg();
     return;
   }
 
-  const svgW = 360;
-  const svgH = 440;
-  const padX = 54;
-  const padY = 62;
+  const svgW = 340;
+  const svgH = 216;
+  const padLeft = 54;
+  const padRight = 24;
+  const padTop = 38;
 
   const L = part.length;
   const W = part.width;
-  const T = part.thickness;
 
-  // Zone utile pour la vue de face principale (et vue de profil en bas)
-  const availW = svgW - padX * 2;
-  const availH = 225;
+  const availW = svgW - padLeft - padRight;
+  const availH = 112;
 
-  const scale = Math.min(availW / L, availH / Math.max(W, 90));
-  const drawW = Math.max(L * scale, 120);
-  const drawH = Math.max(W * scale, 44);
+  const scale = Math.min(availW / L, availH / Math.max(W, 85));
+  const drawW = Math.max(Math.min(L * scale, availW), 140);
+  const drawH = Math.max(Math.min(W * scale, availH), 46);
 
   const scaleX = drawW / L;
   const scaleY = drawH / W;
 
-  const x0 = (svgW - drawW) / 2;
-  const y0 = padY;
+  const x0 = Math.round(padLeft + (availW - drawW) / 2);
+  const y0 = padTop;
 
-  // Contour de la vue principale selon le type de pièce
   let shapePolygon = '';
-  let slopeAnnotation = '';
+  let bottomNote = '';
 
   if (part.shapeType === 'gable_sloped') {
-    // Lame P06 : Triangle rectangle dans un flan brut de 496 × 145 mm
-    // À Gauche (x = 0, Arrière) : hauteur = 145 mm (de y0 à y0 + drawH)
-    // À Droite (x = 496 mm, Avant) : hauteur = 0 mm (pointe en bas à droite : x0 + drawW, y0 + drawH)
     const pTopLeft = `${x0},${y0}`;
     const pBotLeft = `${x0},${y0 + drawH}`;
     const pBotRight = `${x0 + drawW},${y0 + drawH}`;
     const pTopRight = `${x0 + drawW},${y0}`;
     const hypLen = Math.round(Math.hypot(L, W));
 
-    // 1. Triangle supérieur = 2ème pignon (P06 #2 retourné tête-bêche dans le même rectangle 496×145)
-    // 2. Triangle inférieur = 1er pignon (P06 #1) + trait de scie diagonal en ambre
     shapePolygon = `
-      <polygon points="${pTopLeft} ${pTopRight} ${pBotRight}" fill="rgba(56, 189, 248, 0.14)" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
-      <text x="${x0 + drawW * 0.66}" y="${y0 + drawH * 0.34}" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="9.5" font-weight="bold">
-        2ème pignon P06 #2 (tête-bêche)
+      <polygon points="${pTopLeft} ${pTopRight} ${pBotRight}" fill="rgba(56, 189, 248, 0.1)" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="4 3" />
+      <text x="${x0 + drawW - 8}" y="${y0 + 15}" text-anchor="end" fill="#38bdf8" font-family="monospace" font-size="9.5" font-weight="bold">
+        P06 #2 (tête-bêche)
       </text>
-      <polygon points="${pTopLeft} ${pBotLeft} ${pBotRight}" fill="rgba(191, 148, 96, 0.28)" stroke="#f8fafc" stroke-width="2" />
-      <line x1="${x0}" y1="${y0}" x2="${x0 + drawW}" y2="${y0 + drawH}" stroke="#f59e0b" stroke-width="2.4" />
+      <polygon points="${pTopLeft} ${pBotLeft} ${pBotRight}" fill="rgba(191, 148, 96, 0.3)" stroke="#f8fafc" stroke-width="1.8" />
+      <line x1="${x0}" y1="${y0}" x2="${x0 + drawW}" y2="${y0 + drawH}" stroke="#f59e0b" stroke-width="2.2" />
     `;
-    slopeAnnotation = `
-      <path d="M ${x0 + drawW - 44} ${y0 + drawH} A 44 44 0 0 1 ${x0 + drawW - 41} ${y0 + drawH - 13}" fill="none" stroke="#f59e0b" stroke-width="1.6" />
-      <text x="${x0 + drawW * 0.52}" y="${y0 + drawH * 0.52 - 7}" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="10" font-weight="bold">
-        🪚 1 coupe diagonale (${hypLen} mm, ∠ ${part.slopeDeg}°) = 2 pignons P06
-      </text>
-      <text x="${x0 + 4}" y="${y0 + drawH + 14}" fill="#94a3b8" font-family="monospace" font-size="9.5">Arrière (H=145)</text>
-      <text x="${x0 + drawW}" y="${y0 + drawH + 14}" text-anchor="end" fill="#94a3b8" font-family="monospace" font-size="9.5">Pointe Avant (H=0)</text>
-    `;
+    bottomNote = `🪚 Diag. ${hypLen} mm (${part.slopeDeg}°) • Arrière 145 → Avant 0 mm`;
   } else if (part.shapeType === 'sloped_brace') {
-    // Traverse inclinée à 16.7° (P12 / P13) : coupes d'onglet parallèles à 16.7° aux deux extrémités
-    const skewPx = Math.min(Math.round(drawH * Math.tan((part.slopeDeg * Math.PI) / 180)), 22);
+    const skewPx = Math.min(Math.round(drawH * Math.tan((part.slopeDeg * Math.PI) / 180)), 20);
     const p1 = `${x0 + skewPx},${y0}`;
     const p2 = `${x0 + drawW},${y0}`;
     const p3 = `${x0 + drawW - skewPx},${y0 + drawH}`;
     const p4 = `${x0},${y0 + drawH}`;
     shapePolygon = `
-      <polygon points="${p1} ${p2} ${p3} ${p4}" fill="rgba(191, 148, 96, 0.24)" stroke="#f8fafc" stroke-width="2" />
+      <polygon points="${p1} ${p2} ${p3} ${p4}" fill="rgba(191, 148, 96, 0.26)" stroke="#f8fafc" stroke-width="1.8" />
       <line x1="${x0 + skewPx}" y1="${y0}" x2="${x0}" y2="${y0 + drawH}" stroke="#f59e0b" stroke-width="2.2" />
       <line x1="${x0 + drawW}" y1="${y0}" x2="${x0 + drawW - skewPx}" y2="${y0 + drawH}" stroke="#f59e0b" stroke-width="2.2" />
     `;
-    slopeAnnotation = `
-      <text x="${x0 + drawW / 2}" y="${y0 + drawH + 15}" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="10" font-weight="bold">
-        Coupes parallèles ∠ ${part.slopeDeg}° aux 2 bouts (appui sur montants verticaux)
-      </text>
-    `;
+    bottomNote = `🪚 Coupes parallèles ∠ ${part.slopeDeg}° aux 2 extrémités`;
   } else {
     const fillCol =
       part.materialType === 'polycarbonate'
         ? 'rgba(56, 189, 248, 0.18)'
         : part.materialType === 'metal_galva'
         ? 'rgba(203, 213, 225, 0.25)'
-        : 'rgba(191, 148, 96, 0.22)';
+        : 'rgba(191, 148, 96, 0.24)';
     const strokeCol = part.materialType === 'polycarbonate' ? '#38bdf8' : '#f8fafc';
 
-    shapePolygon = `<rect x="${x0}" y="${y0}" width="${drawW}" height="${drawH}" fill="${fillCol}" stroke="${strokeCol}" stroke-width="2" />`;
+    shapePolygon = `<rect x="${x0}" y="${y0}" width="${drawW}" height="${drawH}" fill="${fillCol}" stroke="${strokeCol}" stroke-width="1.8" />`;
+    const holeCount = (part.holes || []).length;
+    const holeDia = part.holes?.[0]?.d || 5;
+    bottomNote = holeCount > 0 ? `Perçages : ${holeCount} × Ø${holeDia} mm` : 'Sans perçage';
   }
 
-  // Perçages débouchants en rouge + lignes d'axe pointillées + cotes X sans chevauchement
-  const labeledXs = new Set();
-  const distinctXs = Array.from(new Set((part.holes || []).map((h) => h.x)));
-  const shouldLabelAllXs = distinctXs.length <= 4;
-
-  const holesSvg = (part.holes || [])
+  // Perçages en rouge dans la pièce + cotes X alignées sous la pièce (zéro chevauchement interne)
+  const holes = part.holes || [];
+  const holesCirclesSvg = holes
     .map((h) => {
       const cx = x0 + h.x * scaleX;
       const cy = y0 + drawH - h.y * scaleY;
-      const r = Math.max(h.d * scaleX * 0.5, 3.2);
-      let showXLabel = false;
-      if (!labeledXs.has(h.x)) {
-        if (
-          shouldLabelAllXs ||
-          h.x === distinctXs[0] ||
-          h.x === distinctXs[distinctXs.length - 1]
-        ) {
-          showXLabel = true;
-          labeledXs.add(h.x);
-        }
-      }
+      const r = Math.max(h.d * scaleX * 0.5, 3);
       return `
         <g>
-          <line x1="${cx - r - 4}" y1="${cy}" x2="${cx + r + 4}" y2="${cy}" stroke="#ef4444" stroke-width="0.9" stroke-dasharray="2 2" />
-          <line x1="${cx}" y1="${cy - r - 4}" x2="${cx}" y2="${cy + r + 4}" stroke="#ef4444" stroke-width="0.9" stroke-dasharray="2 2" />
-          <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(239, 68, 68, 0.28)" stroke="#ef4444" stroke-width="1.5" />
-          ${
-            showXLabel
-              ? `<text x="${cx}" y="${Math.max(y0 + 11, cy - r - 5)}" text-anchor="middle" fill="#fca5a5" font-family="monospace" font-size="9">X=${h.x}</text>`
-              : ''
-          }
+          <line x1="${cx - r - 3}" y1="${cy}" x2="${cx + r + 3}" y2="${cy}" stroke="#ef4444" stroke-width="0.9" />
+          <line x1="${cx}" y1="${cy - r - 3}" x2="${cx}" y2="${cy + r + 3}" stroke="#ef4444" stroke-width="0.9" />
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(239, 68, 68, 0.3)" stroke="#ef4444" stroke-width="1.4" />
         </g>
       `;
     })
     .join('');
 
-  // Vue de coupe latérale / épaisseur (en bas du SVG)
-  const sideY0 = y0 + drawH + 82;
-  const sideH = Math.min(Math.max(T * 1.15, 22), 54);
-  let sideProfileSvg = '';
-
-  if (part.shapeType === 'gable_sloped') {
-    sideProfileSvg = `
-      <text x="${x0}" y="${sideY0 - 12}" fill="#94a3b8" font-family="monospace" font-size="10">TRANCHE (${T} mm) • SYMÉTRIE GAUCHE / DROITE (×2 PIÈCES)</text>
-      <rect x="${x0}" y="${sideY0}" width="${drawW}" height="${sideH}" fill="rgba(148, 163, 184, 0.16)" stroke="#cbd5e1" stroke-width="1.5" />
-      ${(part.holes || [])
-        .map((h) => {
-          const hx = x0 + h.x * scaleX;
-          return `<line x1="${hx}" y1="${sideY0}" x2="${hx}" y2="${sideY0 + sideH}" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="3 2" />`;
-        })
-        .join('')}
-      <text x="${x0 + drawW / 2}" y="${sideY0 + sideH + 15}" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="9.5">
-        H=145 mm toujours côté Arrière (sur P07) • Pointe 0 mm côté Avant (sur P13)
-      </text>
-      ${renderDimLine(x0 - 20, sideY0, x0 - 20, sideY0 + sideH, `Ép. ${T}`, true)}
-    `;
-  } else {
-    const holeSpacingNote =
-      distinctXs.length > 4
-        ? ` • Pas régulier 150 mm (${distinctXs.join(', ')})`
-        : ` • ${(part.holes || []).length} perçages Ø${part.holes?.[0]?.d || 5} mm`;
-    sideProfileSvg = `
-      <text x="${x0}" y="${sideY0 - 12}" fill="#94a3b8" font-family="monospace" font-size="10">TRANCHE / ÉPAISSEUR (${T} mm)${holeSpacingNote}</text>
-      <rect x="${x0}" y="${sideY0}" width="${drawW}" height="${sideH}" fill="rgba(148, 163, 184, 0.16)" stroke="#cbd5e1" stroke-width="1.5" />
-      ${(part.holes || [])
-        .map((h) => {
-          const hx = x0 + h.x * scaleX;
-          return `<line x1="${hx}" y1="${sideY0}" x2="${hx}" y2="${sideY0 + sideH}" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="3 2" />`;
-        })
-        .join('')}
-      ${renderDimLine(x0 - 20, sideY0, x0 - 20, sideY0 + sideH, `Ép. ${T}`, true)}
-    `;
-  }
-
-  // Cote verticale de largeur W : à gauche pour P06 (car le côté de 145 mm est à gauche !), à droite pour les autres pièces
-  const vertDimSvg =
-    part.shapeType === 'gable_sloped'
-      ? `
-        <line x1="${x0 - 26}" y1="${y0}" x2="${x0}" y2="${y0}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
-        <line x1="${x0 - 26}" y1="${y0 + drawH}" x2="${x0}" y2="${y0 + drawH}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
-        ${renderDimLine(x0 - 38, y0, x0 - 38, y0 + drawH, `${W}`, true)}
-      `
-      : `
-        <line x1="${x0 + drawW}" y1="${y0}" x2="${x0 + drawW + 26}" y2="${y0}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
-        <line x1="${x0 + drawW}" y1="${y0 + drawH}" x2="${x0 + drawW + 26}" y2="${y0 + drawH}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
-        ${renderDimLine(x0 + drawW + 18, y0, x0 + drawW + 18, y0 + drawH, `${W} mm`, true)}
+  // Lignes de rappel des X sous le bord inférieur (avec filtrage anti-collision)
+  const distinctXs = Array.from(new Set(holes.map((h) => h.x))).sort((a, b) => a - b);
+  let lastLabelPx = -999;
+  const xLeadersSvg = distinctXs
+    .map((hx, idx) => {
+      const cx = x0 + hx * scaleX;
+      const isEdge = idx === 0 || idx === distinctXs.length - 1;
+      if (distinctXs.length > 5 && !isEdge && cx - lastLabelPx < 30) {
+        return `<line x1="${cx}" y1="${y0 + drawH}" x2="${cx}" y2="${y0 + drawH + 6}" stroke="rgba(239,68,68,0.45)" stroke-width="1" />`;
+      }
+      const stagger = cx - lastLabelPx < 26 ? 11 : 0;
+      lastLabelPx = cx;
+      return `
+        <g>
+          <line x1="${cx}" y1="${y0 + drawH}" x2="${cx}" y2="${y0 + drawH + 9 + stagger}" stroke="rgba(239,68,68,0.5)" stroke-width="1" stroke-dasharray="2 2" />
+          <text x="${cx}" y="${y0 + drawH + 19 + stagger}" text-anchor="middle" fill="#fca5a5" font-family="monospace" font-size="9.5" font-weight="bold">${hx}</text>
+        </g>
       `;
+    })
+    .join('');
 
   containerEl.innerHTML = `
     <svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <marker id="arrow-cyan-start" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto">
-          <path d="M8,1 L2,4 L8,7" fill="none" stroke="#38bdf8" stroke-width="1.4" />
+        <marker id="arrow-cyan-start" markerWidth="7" markerHeight="7" refX="2" refY="3.5" orient="auto">
+          <path d="M7,1 L2,3.5 L7,6" fill="none" stroke="#38bdf8" stroke-width="1.3" />
         </marker>
-        <marker id="arrow-cyan-end" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-          <path d="M0,1 L6,4 L0,7" fill="none" stroke="#38bdf8" stroke-width="1.4" />
+        <marker id="arrow-cyan-end" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+          <path d="M0,1 L5,3.5 L0,6" fill="none" stroke="#38bdf8" stroke-width="1.3" />
         </marker>
       </defs>
 
-      <!-- Titre technique compact en haut de planche -->
-      <text x="14" y="20" fill="#94a3b8" font-family="monospace" font-size="10">
-        VUE DE FACE COTÉE (ÉCHELLE AUTO • UNITÉ : MM)
-      </text>
+      <!-- Cote Horizontale L (en haut) -->
+      <line x1="${x0}" y1="${y0 - 22}" x2="${x0}" y2="${y0}" stroke="rgba(56,189,248,0.35)" stroke-width="1" />
+      <line x1="${x0 + drawW}" y1="${y0 - 22}" x2="${x0 + drawW}" y2="${y0}" stroke="rgba(56,189,248,0.35)" stroke-width="1" />
+      ${renderDimLine(x0, y0 - 15, x0 + drawW, y0 - 15, `${L} mm`, false)}
 
-      <!-- Lignes de rappel Cotes Extérieures -->
-      <line x1="${x0}" y1="${y0 - 26}" x2="${x0}" y2="${y0}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
-      <line x1="${x0 + drawW}" y1="${y0 - 26}" x2="${x0 + drawW}" y2="${y0}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
-      ${renderDimLine(x0, y0 - 18, x0 + drawW, y0 - 18, `${L} mm`, false)}
+      <!-- Cote Verticale W (à gauche) -->
+      <line x1="${x0 - 30}" y1="${y0}" x2="${x0}" y2="${y0}" stroke="rgba(56,189,248,0.35)" stroke-width="1" />
+      <line x1="${x0 - 30}" y1="${y0 + drawH}" x2="${x0}" y2="${y0 + drawH}" stroke="rgba(56,189,248,0.35)" stroke-width="1" />
+      ${renderDimLine(x0 - 22, y0, x0 - 22, y0 + drawH, `${W}`, true)}
 
-      ${vertDimSvg}
-
-      <!-- Pièce & Trous débouchants -->
+      <!-- Contour + Perçages + Cotes X en bas -->
       ${shapePolygon}
-      ${holesSvg}
-      ${slopeAnnotation}
+      ${holesCirclesSvg}
+      ${xLeadersSvg}
 
-      <!-- Vue de profil / Épaisseur en bas -->
-      ${sideProfileSvg}
-
-      <!-- Cartouche bas -->
-      <rect x="12" y="${svgH - 42}" width="${svgW - 24}" height="32" rx="5" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" />
-      <text x="22" y="${svgH - 22}" fill="#e2e8f0" font-family="monospace" font-size="10.5">
-        Réf: ${part.partId} • Brut: ${part.stockSource}
+      <!-- Bandeau résumé concis en bas -->
+      <text x="${svgW / 2}" y="${svgH - 10}" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="10" font-weight="bold">
+        ${bottomNote}
       </text>
     </svg>
   `;
@@ -237,150 +165,70 @@ function renderDimLine(x1, y1, x2, y2, label, isVertical = false) {
   if (!isVertical) {
     return `
       <g>
-        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#38bdf8" stroke-width="1.4" marker-start="url(#arrow-cyan-start)" marker-end="url(#arrow-cyan-end)" />
-        <rect x="${mx - 32}" y="${my - 9}" width="64" height="16" rx="3" fill="#0b1017" />
-        <text x="${mx}" y="${my + 3}" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="bold">${label}</text>
+        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#38bdf8" stroke-width="1.3" marker-start="url(#arrow-cyan-start)" marker-end="url(#arrow-cyan-end)" />
+        <rect x="${mx - 28}" y="${my - 8}" width="56" height="15" rx="3" fill="#0b1017" />
+        <text x="${mx}" y="${my + 3}" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="10.5" font-weight="bold">${label}</text>
       </g>
     `;
   } else {
     return `
       <g>
-        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#38bdf8" stroke-width="1.4" marker-start="url(#arrow-cyan-start)" marker-end="url(#arrow-cyan-end)" />
-        <text x="${mx + 6}" y="${my + 4}" fill="#38bdf8" font-family="monospace" font-size="10.5" font-weight="bold">${label}</text>
+        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#38bdf8" stroke-width="1.3" marker-start="url(#arrow-cyan-start)" marker-end="url(#arrow-cyan-end)" />
+        <rect x="${mx - 16}" y="${my - 8}" width="32" height="15" rx="3" fill="#0b1017" />
+        <text x="${mx}" y="${my + 3}" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="10" font-weight="bold">${label}</text>
       </g>
     `;
   }
 }
 
 /**
- * Dessin technique 2D du Cylindre Vérin Thermique Seul en Poussée Verticale Directe
+ * Schéma épuré du Cylindre Vérin Thermique (Q02)
  */
-function renderDirectCylinderSvg(part) {
+function renderDirectCylinderSvg() {
   return `
-    <svg viewBox="0 0 360 440" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <marker id="arrow-cyan-start" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto">
-          <path d="M8,1 L2,4 L8,7" fill="none" stroke="#38bdf8" stroke-width="1.4" />
-        </marker>
-        <marker id="arrow-cyan-end" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-          <path d="M0,1 L6,4 L0,7" fill="none" stroke="#38bdf8" stroke-width="1.4" />
-        </marker>
-      </defs>
+    <svg viewBox="0 0 340 216" xmlns="http://www.w3.org/2000/svg">
+      <rect x="85" y="18" width="170" height="14" rx="2" fill="rgba(191,148,96,0.3)" stroke="#f8fafc" stroke-width="1.4" />
+      <text x="170" y="28" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="9">Traverse Toit P11 (Appui libre)</text>
 
-      <text x="14" y="22" fill="#94a3b8" font-family="monospace" font-size="10">
-        MONTAGE CYLINDRE SEUL EN POUSSÉE DIRECTE (SANS COMPAS)
-      </text>
+      <rect x="165" y="34" width="10" height="52" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1" />
+      <text x="190" y="64" fill="#38bdf8" font-family="monospace" font-size="9.5" font-weight="bold">Course +90 mm</text>
 
-      <!-- Traverse sous-toit P11 + Plaque Polycarbonate P10 en haut -->
-      <g transform="rotate(-10 180 72)">
-        <rect x="65" y="45" width="230" height="12" fill="rgba(56,189,248,0.22)" stroke="#38bdf8" stroke-width="1.5" />
-        <rect x="135" y="57" width="90" height="24" fill="rgba(191,148,96,0.3)" stroke="#f8fafc" stroke-width="1.5" />
-        <text x="180" y="73" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="9.5">Traverse P11</text>
-      </g>
+      <rect x="146" y="86" width="48" height="20" rx="3" fill="rgba(245,158,11,0.28)" stroke="#f59e0b" stroke-width="1.5" />
+      <text x="136" y="99" text-anchor="end" fill="#fde68a" font-family="monospace" font-size="9.5">Collier P02</text>
 
-      <!-- Patin d'appui libre en sommet de tige -->
-      <rect x="164" y="82" width="32" height="10" rx="3" fill="#334155" stroke="#38bdf8" stroke-width="1.5" />
-      <text x="208" y="90" fill="#38bdf8" font-family="monospace" font-size="10" font-weight="bold">Appui libre (non vissé)</text>
+      <rect x="159" y="106" width="22" height="82" rx="3" fill="#1e293b" stroke="#cbd5e1" stroke-width="1.5" />
+      <text x="190" y="150" fill="#94a3b8" font-family="monospace" font-size="9.5">Cylindre Ø18 × 175 mm</text>
 
-      <!-- Tige de piston inox Ø 8 mm (Course directe ~90 mm) -->
-      <rect x="175" y="92" width="10" height="86" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.2" />
-      ${renderDimLine(125, 86, 125, 178, 'Course 90 mm', true)}
-
-      <!-- Équerre / Collier de fixation 45×45 mm sur le montant central P02 -->
-      <rect x="152" y="178" width="56" height="26" rx="3" fill="rgba(245,158,11,0.28)" stroke="#f59e0b" stroke-width="1.8" />
-      <circle cx="164" cy="191" r="3.5" fill="#ef4444" />
-      <circle cx="196" cy="191" r="3.5" fill="#ef4444" />
-      <text x="218" y="195" fill="#fde68a" font-family="monospace" font-size="10" font-weight="bold">Collier 45 mm</text>
-
-      <!-- Corps du cylindre thermostatique noir Ø 18 mm × 175 mm -->
-      <rect x="168" y="204" width="24" height="168" rx="4" fill="#1e293b" stroke="#cbd5e1" stroke-width="1.8" />
-      <text x="180" y="292" text-anchor="middle" transform="rotate(-90 180 292)" fill="#94a3b8" font-family="monospace" font-size="10.5" font-weight="bold">
-        CYLINDRE NOIR 175 MM (Ø18)
-      </text>
-      ${renderDimLine(125, 184, 125, 372, '175 mm', true)}
-
-      <!-- Cartouche bas -->
-      <rect x="12" y="394" width="336" height="34" rx="5" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" />
-      <text x="22" y="415" fill="#e2e8f0" font-family="monospace" font-size="10.5">
-        Réf: ${part.partId} • Force directe ~25 kg • Levage libre à 90°
+      <text x="170" y="206" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="10" font-weight="bold">
+        Poussée directe ~25 kg • Levage toit libre à 90°
       </text>
     </svg>
   `;
 }
 
 /**
- * Dessin technique 2D de la Grenouillère de Serrage Rapide Inox Q03 (Loquet à levier + Gâche)
+ * Schéma épuré de la Fermeture Hettich 49×13 mm (Q03)
  */
-function renderToggleLatchSvg(part) {
+function renderToggleLatchSvg() {
   return `
-    <svg viewBox="0 0 360 440" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <marker id="arrow-cyan-start" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto">
-          <path d="M8,1 L2,4 L8,7" fill="none" stroke="#38bdf8" stroke-width="1.4" />
-        </marker>
-        <marker id="arrow-cyan-end" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-          <path d="M0,1 L6,4 L0,7" fill="none" stroke="#38bdf8" stroke-width="1.4" />
-        </marker>
-      </defs>
+    <svg viewBox="0 0 340 216" xmlns="http://www.w3.org/2000/svg">
+      <!-- Clanche 49 × 13 mm -->
+      <rect x="45" y="68" width="115" height="34" rx="4" fill="rgba(148,163,184,0.32)" stroke="#f8fafc" stroke-width="1.6" />
+      <text x="102" y="89" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="9.5" font-weight="bold">Clanche 49×13</text>
+      <text x="102" y="118" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="9">Sur Façade (P01/P03)</text>
 
-      <text x="14" y="22" fill="#94a3b8" font-family="monospace" font-size="10">
-        HETTICH #58332504 (CLANCHE 49×13 + ÉTRIER 23×23 + GÂCHE 15MM)
-      </text>
+      <!-- Étrier 23 × 23 mm -->
+      <rect x="142" y="58" width="56" height="54" rx="6" fill="none" stroke="#38bdf8" stroke-width="3.5" />
+      <text x="170" y="48" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="9.5" font-weight="bold">Étrier 23 mm</text>
 
-      <!-- Dessin coté exact selon plan Hettich : Corps 49×13, Étrier Ø3 23×23, Gâche 15 mm (trous Ø4 à 20 et 8,25 mm) -->
-      ${renderDimLine(55, 52, 185, 52, '49 mm (Levier)', false)}
-      ${renderDimLine(155, 74, 218, 74, '23 mm', false)}
-      ${renderDimLine(34, 96, 34, 158, '23 mm', true)}
+      <!-- Gâche 15 mm à 90° -->
+      <rect x="194" y="64" width="96" height="42" rx="3" fill="rgba(245,158,11,0.25)" stroke="#f59e0b" stroke-width="1.6" />
+      <circle cx="222" cy="85" r="4.5" fill="rgba(239,68,68,0.35)" stroke="#ef4444" stroke-width="1.4" />
+      <circle cx="264" cy="85" r="4.5" fill="rgba(239,68,68,0.35)" stroke="#ef4444" stroke-width="1.4" />
+      <text x="242" y="122" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="9">Gâche à 90° sur Côté (P05)</text>
 
-      <!-- Clanche 49 × 13 mm (sur Côté Long P01/P03) -->
-      <rect x="55" y="109" width="130" height="36" rx="4" fill="rgba(148,163,184,0.32)" stroke="#f8fafc" stroke-width="1.8" />
-      <text x="112" y="131" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="9.5" font-weight="bold">CLANCHE 49×13</text>
-      <text x="120" y="176" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="9.5">Sur Côté Long (P01/P03)</text>
-
-      <!-- Étrier en fil Ø 3 mm (23 × 23 mm) qui enjambe les 27 mm de tranche de P05 -->
-      <rect x="155" y="96" width="63" height="62" rx="7" fill="none" stroke="#38bdf8" stroke-width="4" />
-      <text x="186" y="90" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="9">Fil Ø3 (23×23)</text>
-
-      <!-- Gâche plate 15 mm posée à 90° sur la face extérieure de P05 (2 trous Ø4 à 20 mm + 8,25 mm) -->
-      <rect x="214" y="104" width="102" height="46" rx="3" fill="rgba(245,158,11,0.25)" stroke="#f59e0b" stroke-width="1.8" />
-      <rect x="210" y="104" width="10" height="46" rx="2" fill="#f59e0b" />
-      <circle cx="242" cy="127" r="5.5" fill="rgba(239,68,68,0.35)" stroke="#ef4444" stroke-width="1.5" />
-      <circle cx="292" cy="127" r="5.5" fill="rgba(239,68,68,0.35)" stroke="#ef4444" stroke-width="1.5" />
-      ${renderDimLine(242, 82, 292, 82, '20 mm', false)}
-      <text x="267" y="176" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="9.5">Gâche 15 mm (à 90° sur P05)</text>
-
-      <!-- Coupe horizontale d'un coin : Clanche sur P01/P03 + Étrier 23mm + Gâche à 90° sur face ext. de P05 -->
-      <text x="14" y="216" fill="#94a3b8" font-family="monospace" font-size="10">
-        COUPE D'ANGLE HORIZONTALE : MONTAGE À 90° (SANS VIS EN BOUT)
-      </text>
-
-      <!-- Lame Façade P01/P03 -->
-      <rect x="45" y="242" width="165" height="28" fill="rgba(191,148,96,0.35)" stroke="#f8fafc" stroke-width="1.4" />
-      <text x="125" y="260" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="9.5">Côté Long Fixe P01/P03</text>
-
-      <!-- Montant Fixe P02/P04 -->
-      <rect x="135" y="270" width="75" height="50" fill="rgba(160,115,68,0.4)" stroke="#f8fafc" stroke-width="1.4" />
-      <text x="172" y="299" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="9.5">Fixe P02/P04</text>
-
-      <!-- Montant Côté Amovible P07/P08 (emboîté en butée contre P02/P04) -->
-      <rect x="210" y="270" width="50" height="75" fill="rgba(56,189,248,0.25)" stroke="#38bdf8" stroke-width="1.6" />
-      <text x="235" y="310" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="9" font-weight="bold">P07/P08</text>
-
-      <!-- Lame Côté Amovible P05 (épaisseur 27 mm entre X=950 et X=977) -->
-      <rect x="210" y="242" width="32" height="28" fill="rgba(191,148,96,0.5)" stroke="#38bdf8" stroke-width="1.6" />
-      <rect x="260" y="242" width="32" height="125" fill="rgba(191,148,96,0.35)" stroke="#38bdf8" stroke-width="1.6" />
-      <text x="276" y="312" text-anchor="middle" transform="rotate(-90 276 312)" fill="#f8fafc" font-family="monospace" font-size="9.5">Côté Amovible P05 (27mm)</text>
-
-      <!-- Clanche sur P01/P03 + Étrier 23mm enjambant la tranche 27mm + Gâche à 90° sur la face ext. de P05 -->
-      <rect x="145" y="233" width="65" height="8" rx="2" fill="#94a3b8" stroke="#f8fafc" stroke-width="1" />
-      <path d="M202,235 L298,235 L298,244" fill="none" stroke="#38bdf8" stroke-width="3.2" />
-      <path d="M292,240 L299,240 L299,298" fill="none" stroke="#f59e0b" stroke-width="3.5" />
-      <text x="225" y="226" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="9.5" font-weight="bold">Clanche (Façade) ➔ Étrier 23mm ➔ Gâche 90° (Côté)</text>
-
-      <!-- Cartouche bas -->
-      <rect x="12" y="394" width="336" height="34" rx="5" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(148, 163, 184, 0.2)" />
-      <text x="22" y="415" fill="#e2e8f0" font-family="monospace" font-size="10.5">
-        Réf: ${part.partId} • 8 unités (4/côté) • Dépose en 3 sec sans outil
+      <text x="170" y="198" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="10" font-weight="bold">
+        Hettich #58332504 • 8 unités (4/côté) • Dépose sans outil
       </text>
     </svg>
   `;
