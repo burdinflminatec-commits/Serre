@@ -11,7 +11,7 @@
   --accent-amber: #f59e0b;
   --accent-green: #22c55e;
   --accent-red: #ef4444;
-  --header-h: 58px;
+  --header-h: 46px;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
 }
@@ -23,8 +23,11 @@
 }
 
 html, body {
-  width: 100vw;
-  height: 100vh;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
   overflow: hidden;
   background: var(--bg-dark);
   color: var(--text-main);
@@ -35,14 +38,15 @@ html, body {
 }
 
 .app-layout {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-/* 1. BARRE D'EN-TÊTE */
+/* 1. BARRE D'EN-TÊTE CONCISE */
 .top-bar {
   height: var(--header-h);
   min-height: var(--header-h);
@@ -52,86 +56,64 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  gap: 8px;
+  padding: 0 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
   z-index: 40;
+}
+
+.top-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .brand-block {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .brand-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(56, 189, 248, 0.22));
   border: 1px solid rgba(56, 189, 248, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 19px;
+  font-size: 15px;
 }
 
-.brand-titles h1 {
-  font-size: 14px;
+.brand-title {
+  font-size: 13.5px;
   font-weight: 700;
-  letter-spacing: 0.4px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.badge-status {
-  font-size: 10px;
-  font-family: var(--font-mono);
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 99px;
-  background: rgba(34, 197, 94, 0.16);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.35);
-}
-
-.brand-subtitle {
-  font-size: 11.5px;
-  color: var(--text-muted);
-  margin-top: 2px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.brand-subtitle strong {
-  color: #e2e8f0;
-  font-family: var(--font-mono);
-  font-weight: 600;
-}
-
-.brand-subtitle .sep {
-  opacity: 0.45;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 .top-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .action-btn {
   background: rgba(30, 41, 59, 0.85);
   color: var(--text-main);
   border: 1px solid var(--border-subtle);
-  padding: 7px 12px;
-  border-radius: 7px;
-  font-size: 12.5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  gap: 5px;
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .action-btn:hover {
@@ -157,20 +139,20 @@ html, body {
 }
 
 .action-btn.icon-only {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   justify-content: center;
   font-family: var(--font-mono);
   font-weight: 700;
 }
 
-/* ZONE DE TRAVAIL */
+/* ZONE DE TRAVAIL (SANS 100vh QUI DÉBORDE SUR TABLETTE ANDROID) */
 .workspace {
   position: relative;
   flex: 1;
+  min-height: 0;
   width: 100%;
-  height: calc(100vh - var(--header-h));
   overflow: hidden;
 }
 
@@ -192,30 +174,30 @@ html, body {
 /* BOUTONS RAPIDES TABLETTE EN HAUT À DROITE DE LA VUE 3D */
 .viewport-quick-bar {
   position: absolute;
-  top: 12px;
-  right: 344px;
+  top: 10px;
+  right: 274px;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   z-index: 22;
 }
 
 body.lite-mode .viewport-quick-bar,
 body.panel-collapsed .viewport-quick-bar {
-  right: 12px;
+  right: 10px;
 }
 
 .vp-quick-btn {
   background: #151e2c;
-  color: #e2e8f0;
+  color: #f8fafc;
   border: 1px solid #38bdf8;
-  padding: 7px 12px;
+  padding: 6px 11px;
   border-radius: 7px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -232,39 +214,29 @@ body.panel-collapsed .control-panel {
 /* HUD BAS DE VIEWPORT */
 .viewport-hud {
   position: absolute;
-  bottom: 12px;
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
   pointer-events: none;
   z-index: 15;
 }
 
 .hud-pill {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.88);
   border: 1px solid var(--border-subtle);
   backdrop-filter: blur(8px);
-  padding: 5px 14px;
+  padding: 4px 12px;
   border-radius: 99px;
   font-size: 12px;
   color: #e2e8f0;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
-.hud-coords {
-  font-size: 11px;
-  color: var(--text-muted);
-  background: rgba(15, 23, 42, 0.7);
-  padding: 2px 10px;
-  border-radius: 99px;
-}
-
-.hud-coords strong {
-  color: var(--accent-cyan);
-  font-family: var(--font-mono);
+.hud-pill.hidden {
+  display: none !important;
 }
 
 /* 2. VOLET GAUCHE : INSPECTEUR DE PIÈCE 2D ÉPURÉ */
@@ -453,16 +425,16 @@ body.panel-collapsed .control-panel {
   color: #fde68a;
 }
 
-/* 3. VOLET DROIT : PANNEAU DE CONTRÔLE CAD */
+/* 3. VOLET DROIT : PANNEAU DE CONTRÔLE CONCIS (OPTIMISÉ TABLETTE SANS ROGNAGE BAS) */
 .control-panel {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  bottom: 12px;
-  width: 320px;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  width: 254px;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: 10px;
   backdrop-filter: blur(16px);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
   display: flex;
@@ -472,7 +444,7 @@ body.panel-collapsed .control-panel {
 }
 
 .control-panel::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
 }
 .control-panel::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.25);
@@ -480,7 +452,7 @@ body.panel-collapsed .control-panel {
 }
 
 .panel-section {
-  padding: 11px 13px;
+  padding: 8px 11px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -488,74 +460,65 @@ body.panel-collapsed .control-panel {
   border-bottom: none;
 }
 
+.panel-section.hidden {
+  display: none !important;
+}
+
 .section-title {
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #cbd5e1;
-  margin-bottom: 8px;
+  color: #94a3b8;
+  margin-bottom: 6px;
 }
 
 .section-header-inline {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .section-header-inline .section-title {
   margin-bottom: 0;
 }
 
-.checkbox-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.chk-label {
-  display: flex;
+.switch-label {
+  display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  color: #e2e8f0;
+  gap: 5px;
+  font-size: 11px;
+  color: #cbd5e1;
   cursor: pointer;
 }
 
-.chk-label input[type="checkbox"] {
+.switch-label input[type="checkbox"] {
   accent-color: var(--accent-cyan);
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   cursor: pointer;
 }
 
-.mt-6 {
-  margin-top: 6px;
-}
-
-.mechanisms-box {
-  margin-top: 9px;
-  padding-top: 8px;
-  border-top: 1px dashed rgba(148, 163, 184, 0.2);
+.sliders-stack {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 6px;
 }
 
-.mech-control {
-  background: rgba(15, 23, 42, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 7px;
-  padding: 7px 9px;
+.compact-slider {
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 6px;
+  padding: 5px 8px;
 }
 
 .mech-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11.5px;
-  margin-bottom: 4px;
+  font-size: 11px;
+  margin-bottom: 2px;
 }
 
 .mech-header strong {
@@ -564,19 +527,41 @@ body.panel-collapsed .control-panel {
   font-size: 11px;
 }
 
-.mech-quick-btns {
+.checkbox-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 8px;
+}
+
+.chk-label {
   display: flex;
-  gap: 4px;
-  margin-top: 4px;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #e2e8f0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chk-label.span-2 {
+  grid-column: span 2;
+  padding-top: 2px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.16);
+}
+
+.chk-label input[type="checkbox"] {
+  accent-color: var(--accent-cyan);
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
 }
 
 .mini-btn {
-  flex: 1;
   background: rgba(30, 41, 59, 0.9);
   border: 1px solid var(--border-subtle);
   color: #cbd5e1;
   font-size: 10.5px;
-  padding: 3px 6px;
+  padding: 2px 6px;
   border-radius: 4px;
   cursor: pointer;
 }
@@ -584,13 +569,6 @@ body.panel-collapsed .control-panel {
 .mini-btn:hover {
   border-color: var(--accent-cyan);
   color: #fff;
-}
-
-.mini-btn.active-mode {
-  background: rgba(56, 189, 248, 0.25);
-  border-color: var(--accent-cyan);
-  color: #e0f2fe;
-  font-weight: 700;
 }
 
 .mini-btn.danger:hover {
@@ -603,38 +581,16 @@ input[type="range"] {
   accent-color: var(--accent-cyan);
   cursor: pointer;
   height: 5px;
-}
-
-.toggle-row {
-  display: flex;
-  gap: 6px;
-}
-
-.toggle-btn {
-  flex: 1.5;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-subtle);
-  background: rgba(30, 41, 59, 0.85);
-  color: var(--text-main);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.toggle-btn.active {
-  background: rgba(245, 158, 11, 0.25);
-  border-color: var(--accent-amber);
-  color: #fde68a;
+  display: block;
 }
 
 .measurements-list {
-  margin-top: 7px;
-  max-height: 92px;
+  margin-top: 5px;
+  max-height: 76px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .measure-item {
@@ -643,7 +599,7 @@ input[type="range"] {
   justify-content: space-between;
   background: rgba(15, 23, 42, 0.65);
   border: 1px solid rgba(56, 189, 248, 0.25);
-  padding: 4px 8px;
+  padding: 3px 7px;
   border-radius: 5px;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -658,28 +614,21 @@ input[type="range"] {
   padding: 0 3px;
 }
 
-.empty-note {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-style: italic;
-  line-height: 1.35;
-}
-
 .accent-val, .mono-val {
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--accent-cyan);
 }
 
 .axis-selector {
   display: flex;
   gap: 4px;
-  margin-bottom: 7px;
+  margin-bottom: 5px;
 }
 
 .axis-btn {
   flex: 1;
-  padding: 5px 4px;
+  padding: 4px 4px;
   font-size: 11px;
   font-weight: 600;
   border-radius: 5px;
@@ -696,7 +645,7 @@ input[type="range"] {
 }
 
 .axis-flip-btn {
-  width: 30px;
+  width: 28px;
   border-radius: 5px;
   border: 1px solid var(--border-subtle);
   background: rgba(30, 41, 59, 0.85);
@@ -708,27 +657,27 @@ input[type="range"] {
 .slider-with-val {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .slider-with-val .mono-val {
-  min-width: 58px;
+  min-width: 50px;
   text-align: right;
 }
 
-.views-grid {
+.views-grid-4 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
 }
 
 .view-btn {
-  padding: 6px 8px;
-  border-radius: 6px;
+  padding: 5px 4px;
+  border-radius: 5px;
   border: 1px solid var(--border-subtle);
   background: rgba(30, 41, 59, 0.8);
   color: var(--text-main);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -738,8 +687,8 @@ input[type="range"] {
   background: rgba(51, 65, 85, 0.9);
 }
 
-.view-btn.span-2 {
-  grid-column: span 2;
+.view-btn.span-4 {
+  grid-column: span 4;
 }
 
 /* 5. ÉTIQUETTES DE MESURE 3D & TOOLTIP */
@@ -1259,7 +1208,7 @@ body.lite-mode .piece-inspector {
   top: auto;
   left: auto;
   bottom: auto;
-  width: 340px;
+  width: 310px;
   height: 100%;
   background: #111823;
   border: none;
@@ -1279,7 +1228,7 @@ body.lite-mode .control-panel {
   top: auto;
   right: auto;
   bottom: auto;
-  width: 300px;
+  width: 244px;
   height: 100%;
   background: #111823;
   border: none;
@@ -1288,14 +1237,12 @@ body.lite-mode .control-panel {
 }
 
 body.lite-mode .hud-pill,
-body.lite-mode .hud-coords,
 body.lite-mode .measure-badge-3d,
 body.lite-mode .measurement-tooltip,
-body.lite-mode .mech-control,
+body.lite-mode .compact-slider,
 body.lite-mode .action-btn,
 body.lite-mode .view-btn,
 body.lite-mode .mini-btn,
-body.lite-mode .toggle-btn,
 body.lite-mode .pin-card,
 body.lite-mode .modal-backdrop {
   background-color: #151e2c;
@@ -1305,6 +1252,29 @@ body.lite-mode .action-btn.lite-active {
   background: #166534;
   border-color: #22c55e;
   color: #dcfce7;
+}
+
+/* ADAPTATION ÉCRANS ÉTROITS / PORTRAIT MOBILE */
+@media (max-width: 720px) {
+  body.lite-mode .workspace {
+    flex-direction: column;
+  }
+  body.lite-mode .control-panel,
+  .control-panel {
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    height: auto;
+    max-height: 42%;
+    border-left: none;
+    border-top: 1px solid #263244;
+    border-radius: 0;
+  }
+  .viewport-quick-bar {
+    right: 10px;
+  }
 }
 
 /* MODE IMPRESSION ATELIER A4 PAYSAGE */
@@ -1319,8 +1289,9 @@ body.lite-mode .action-btn.lite-active {
   }
 
   html, body {
-    width: auto;
-    height: auto;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
     overflow: visible !important;
     background: #ffffff !important;
     color: #000000 !important;

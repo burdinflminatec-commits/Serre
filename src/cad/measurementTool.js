@@ -35,7 +35,7 @@ export class MeasurementTool {
 
     this.enabled = false;
     this.xrayPolycarbonate = false;
-    this.showGlobalDims = true;
+    this.showGlobalDims = false;
 
     this.raycaster = new THREE.Raycaster();
     this.mouseNdc = new THREE.Vector2();
@@ -145,11 +145,13 @@ export class MeasurementTool {
       const badge = document.createElement('div');
       badge.className = 'measure-badge-3d global-dim';
       badge.textContent = d.label;
+      badge.style.display = 'none';
       this.labelsContainer.appendChild(badge);
 
       const mid = d.p1.clone().add(d.p2).multiplyScalar(0.5);
       this.globalDimBadges.push({ mid, badge });
     });
+    this.globalDimsGroup.visible = false;
   }
 
   setGlobalDimsVisible(visible) {
@@ -595,19 +597,20 @@ export class MeasurementTool {
 
   _renderMeasurementsList() {
     if (!this.listContainer) return;
+    const sectionEl = this.listContainer.closest('.panel-section');
     if (this.measurements.length === 0) {
-      this.listContainer.innerHTML = `
-        <div class="empty-note">Aucune mesure active. Cliquez sur « Activer Mesure (M) » puis clic gauche sur 2 points.</div>
-      `;
+      this.listContainer.innerHTML = '';
+      if (sectionEl) sectionEl.classList.add('hidden');
       return;
     }
 
+    if (sectionEl) sectionEl.classList.remove('hidden');
     this.listContainer.innerHTML = '';
     this.measurements.forEach((m, index) => {
       const row = document.createElement('div');
       row.className = 'measure-item';
       row.innerHTML = `
-        <span>#${index + 1} : <strong>${m.distMm.toFixed(1)} mm</strong> (ΔX ${m.deltas.dx.toFixed(0)} · ΔY ${m.deltas.dy.toFixed(0)} · ΔZ ${m.deltas.dz.toFixed(0)})</span>
+        <span>#${index + 1} : <strong>${m.distMm.toFixed(1)} mm</strong></span>
         <button type="button" title="Supprimer">✕</button>
       `;
       row.querySelector('button').addEventListener('click', () => {

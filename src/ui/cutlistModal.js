@@ -150,22 +150,17 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
       // Rendu spécifique selon le type de coupe (P06 coupe diagonale pignon, P11 délignage en 2, P12/P13 coupes 16.7°)
       let shapeInnerSvg = '';
       if (cut.diagonalGable) {
-        // Triangle P06 (145 mm à gauche -> 0 mm à droite) + triangle de chute au-dessus de la diagonale
+        // Les 2 pignons P06 (#1 et #2) sont découpés tête-bêche dans le MÊME rectangle de 496×145 mm
         const pTL = `${x},${barY}`;
         const pBL = `${x},${barY + barH}`;
         const pBR = `${x + w},${barY + barH}`;
         const pTR = `${x + w},${barY}`;
         shapeInnerSvg = `
-          <polygon points="${pTL} ${pTR} ${pBR}" fill="${isPrint ? '#f1f5f9' : 'rgba(148, 163, 184, 0.08)'}" stroke="#64748b" stroke-width="1" stroke-dasharray="3 2" />
+          <polygon points="${pTL} ${pTR} ${pBR}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
           <polygon points="${pTL} ${pBL} ${pBR}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
-          <line x1="${x}" y1="${barY}" x2="${x + w}" y2="${barY + barH}" stroke="#f59e0b" stroke-width="2.2" />
-          <text x="${x + w * 0.76}" y="${barY + 12}" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="8.5">Chute</text>
-          <text x="${x + w * 0.36}" y="${barY + 24}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="10" font-weight="bold">
-            ${cut.instanceLabel}
-          </text>
-          <text x="${x + w * 0.38}" y="${barY + 35}" text-anchor="middle" fill="${isPrint ? '#334155' : '#fde68a'}" font-family="monospace" font-size="9">
-            496×145→0 (∠16.7°)
-          </text>
+          <line x1="${x}" y1="${barY}" x2="${x + w}" y2="${barY + barH}" stroke="#f59e0b" stroke-width="2.4" />
+          <text x="${x + w * 0.72}" y="${barY + 13}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="9.5" font-weight="bold">P06 #2 (D)</text>
+          <text x="${x + w * 0.28}" y="${barY + 32}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="9.5" font-weight="bold">P06 #1 (G)</text>
         `;
       } else if (cut.ripInTwo) {
         // Délignage longitudinal en 2 lattes de 68 mm (P11 #1 et P11 #2) dans la largeur de 145 mm

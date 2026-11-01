@@ -1,17 +1,10 @@
 # 🌱 Serre Bois & Polycarbonate (1900 × 500 mm) — Bureau d'Études & Atelier CAD 3D
 
-## 🌐 Adresses en ligne (GitHub Pages — Copier / Coller)
+## 🌐 Adresse en ligne (GitHub Pages — Copier / Coller)
 
-### 1. Version Principale (PC HD & Détection auto Mobile/Tablette)
-👉 **[Ouvrir l'application 3D principale](https://burdinflminatec-commits.github.io/Serre/)**
+👉 **[Ouvrir l'application 3D (PC HD & Détection auto Mobile/Tablette Lite)](https://burdinflminatec-commits.github.io/Serre/)**
 ```text
 https://burdinflminatec-commits.github.io/Serre/
-```
-
-### 2. Version Lite dédiée Tablette (Samsung Galaxy Tab A SM-T580 / Mali-T830)
-⚡ **[Ouvrir directement la version Lite Tablette](https://burdinflminatec-commits.github.io/Serre/lite.html)**
-```text
-https://burdinflminatec-commits.github.io/Serre/lite.html
 ```
 
 > 🔒 **Code PIN par défaut** : `1950` *(mémorisé automatiquement dans le navigateur après le 1er déverrouillage)*

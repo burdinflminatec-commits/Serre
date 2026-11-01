@@ -154,7 +154,7 @@ export const PARTS_CATALOG = {
       { x: 190, y: 52, d: 5 },
       { x: 330, y: 24, d: 5 }
     ],
-    notes: 'Triangle rectangle : hauteur 145 mm à l’Arrière (X=0) décroissant en diagonale (pente 16.7°, trait de coupe 517 mm) jusqu’à 0 mm à l’Avant (X=496 mm). Fixée à X=60 mm dans le montant arrière P07 et à X=190 / 330 mm dans la traverse inclinée P13.'
+    notes: 'Les 2 pignons (P06 #1 Gauche et P06 #2 Droit) sont découpés dans le MÊME rectangle de 496 × 145 mm par une seule coupe diagonale (16.7°, trait 517 mm) en retournant le second triangle.'
   },
 
   P07: {
@@ -419,7 +419,7 @@ export const STOCK_CUTLIST = {
         offcut: 0
       };
     } else {
-      // 14ème lame : 1 × P05 (496) + 2 × P06 (496 avec refente diagonale 145->0mm) + 2 × P11 (délignées 2×68mm dans 890 mm)
+      // 14ème lame : 1 × P05 (496) + 1 rectangle de 496 mm refendu en diagonale pour donner les 2 × P06 (#1 et #2) + 2 × P11 (délignées 2×68mm dans 890 mm)
       return {
         stockId: 'LAME-14',
         label: 'Lame Terrasse #14 (Pin Vert Cerland)',
@@ -429,11 +429,10 @@ export const STOCK_CUTLIST = {
         status: 'in_stock',
         cuts: [
           { partId: 'P05', instanceLabel: 'P05 #14 (Côté D R7)', length: 496, startX: 0 },
-          { partId: 'P06', instanceLabel: 'P06 #1 (Pignon G : 145→0mm)', length: 496, startX: 500, diagonalGable: true },
-          { partId: 'P06', instanceLabel: 'P06 #2 (Pignon D : 145→0mm)', length: 496, startX: 1000, diagonalGable: true },
-          { partId: 'P11', instanceLabel: 'P11 ×2 (Déligné 2×68mm)', length: 890, startX: 1500, ripInTwo: true }
+          { partId: 'P06', instanceLabel: 'P06 #1 + #2 (2 Pignons tête-bêche)', length: 496, startX: 500, diagonalGable: true },
+          { partId: 'P11', instanceLabel: 'P11 ×2 (Déligné 2×68mm)', length: 890, startX: 1000, ripInTwo: true }
         ],
-        offcut: 10
+        offcut: 510
       };
     }
   }),

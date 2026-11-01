@@ -148,8 +148,7 @@ const isMobileOrTabletUA = /Android|SM-T580|Tablet|Mobile|iPad|iPhone/i.test(
 );
 
 const isLiteMode = Boolean(
-  window.FORCE_LITE_MODE === true ||
-    urlParams.get('lite') === '1' ||
+  urlParams.get('lite') === '1' ||
     savedPerfMode === 'lite' ||
     (savedPerfMode !== 'hd' && isMobileOrTabletUA)
 );
@@ -158,15 +157,11 @@ document.body.classList.toggle('lite-mode', isLiteMode);
 
 const btnTopPerf = document.getElementById('btn-top-perf');
 if (btnTopPerf) {
-  if (isLiteMode) {
-    btnTopPerf.textContent = '⚡ Mode Tab A Lite (Actif)';
-    btnTopPerf.classList.add('lite-active');
-    btnTopPerf.title = 'Profil Mali-T830 actif — Cliquez pour passer en Mode PC HD';
-  } else {
-    btnTopPerf.textContent = '⚡ Mode Tab A Lite';
-    btnTopPerf.classList.remove('lite-active');
-    btnTopPerf.title = 'Cliquez pour activer le Mode Tab A Lite (optimisé tablette SM-T580)';
-  }
+  btnTopPerf.textContent = '⚡ Lite';
+  btnTopPerf.classList.toggle('lite-active', isLiteMode);
+  btnTopPerf.title = isLiteMode
+    ? 'Mode Lite actif — Cliquer pour passer en HD'
+    : 'Activer le Mode Lite (Tablette / Mobile)';
 
   btnTopPerf.addEventListener('click', () => {
     const nextMode = isLiteMode ? 'hd' : 'lite';
@@ -178,20 +173,18 @@ if (btnTopPerf) {
       url.searchParams.set('lite', '1');
     } else {
       url.searchParams.delete('lite');
-      if (url.pathname.endsWith('/lite.html')) {
-        url.pathname = url.pathname.replace(/\/lite\.html$/, '/index.html');
-      }
     }
     window.location.href = url.toString();
   });
 }
 
 // ============================================================================
-// PLEIN ÉCRAN TABLETTE (FULLSCREEN API) & REPLI DU PANNEAU DE DROITE
+// PLEIN ÉCRAN (FULLSCREEN API) & REPLI DU PANNEAU DE DROITE
 // ============================================================================
 const btnTopFullscreen = document.getElementById('btn-top-fullscreen');
 const btnVpFullscreen = document.getElementById('btn-vp-fullscreen');
 const btnVpPanel = document.getElementById('btn-vp-panel');
+const btnVpTogglePanel = document.getElementById('btn-vp-toggle-panel');
 
 function isFullscreenActive() {
   return Boolean(
@@ -204,7 +197,7 @@ function isFullscreenActive() {
 
 function updateFullscreenButtonsUI() {
   const active = isFullscreenActive();
-  const label = active ? '⛶ Quitter Plein Écran' : '⛶ Plein Écran';
+  const label = active ? '⛶ Quitter' : '⛶ Plein écran';
   if (btnTopFullscreen) {
     btnTopFullscreen.textContent = label;
     btnTopFullscreen.classList.toggle('active', active);
@@ -244,12 +237,15 @@ document.addEventListener('webkitfullscreenchange', () => {
   setTimeout(onResize, 60);
 });
 
-btnVpPanel?.addEventListener('click', () => {
+function toggleRightPanel() {
   const collapsed = document.body.classList.toggle('panel-collapsed');
-  btnVpPanel.textContent = collapsed ? '⇤ Afficher Panneau' : '⇥ Masquer Panneau';
-  btnVpPanel.classList.toggle('active', collapsed);
+  btnVpPanel?.classList.toggle('active', collapsed);
+  btnVpTogglePanel?.classList.toggle('active', collapsed);
   onResize();
-});
+}
+
+btnVpPanel?.addEventListener('click', toggleRightPanel);
+btnVpTogglePanel?.addEventListener('click', toggleRightPanel);
 
 window.addEventListener('keydown', (e) => {
   if (!isPinUnlocked) return;
@@ -328,24 +324,15 @@ const backLight = new THREE.DirectionalLight(0x93c5fd, 0.55);
 backLight.position.set(-1600, 1400, -1900);
 scene.add(backLight);
 
-// Grille technique au sol (Z_cad = 0 -> three.y = 0) élargie pour le roulage des plantes
+// Grille discrète au sol
 const gridMajor = new THREE.GridHelper(
-  7600,
-  isLiteMode ? 38 : 76,
-  0x38bdf8,
-  0x1e293b
+  5600,
+  isLiteMode ? 28 : 56,
+  0x1e293b,
+  0x151e2c
 );
 gridMajor.position.y = -0.5;
 scene.add(gridMajor);
-
-// Axes repère au sol (Origine au coin avant-gauche pour lecture intuitive)
-const axesGroup = new THREE.Group();
-axesGroup.position.copy(cadToThree(-1080, -340, 2));
-const arrowX = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 220, 0xef4444, 24, 12);
-const arrowY = new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), new THREE.Vector3(), 220, 0x22c55e, 24, 12);
-const arrowZ = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 220, 0x38bdf8, 24, 12);
-axesGroup.add(arrowX, arrowY, arrowZ);
-scene.add(axesGroup);
 
 // ============================================================================
 // BOUCLE DE RENDU À LA DEMANDE (Zéro charge CPU/GPU au repos sur Exynos 7870)
@@ -382,7 +369,6 @@ Object.values(materials).forEach((mat) => {
 // ============================================================================
 
 const btnTopMeasure = document.getElementById('btn-top-measure');
-const btnPanelMeasure = document.getElementById('btn-panel-measure');
 
 const measurementTool = new MeasurementTool({
   scene,
@@ -394,9 +380,7 @@ const measurementTool = new MeasurementTool({
   partMeshes: serre.partMeshes,
   sectionManager,
   onStateChange: (active) => {
-    btnTopMeasure.classList.toggle('active', active);
-    btnPanelMeasure.classList.toggle('active', active);
-    btnPanelMeasure.textContent = active ? 'Mesure Active (Échap/M)' : 'Activer Mesure (M)';
+    btnTopMeasure?.classList.toggle('active', active);
   },
   onRequestRender: requestRenderIfNotRequested
 });
@@ -454,7 +438,8 @@ function selectPartByMesh(mesh) {
     onResize();
   }
 
-  hudSelection.innerHTML = `Sélection : <strong style="color:#fde68a;">${mesh.userData.instanceId}</strong> — ${part.name} (${part.length}×${part.width}×${part.thickness} mm)`;
+  hudSelection.innerHTML = `<strong style="color:#fde68a;">${mesh.userData.instanceId}</strong> — ${part.name} (${part.length}×${part.width}×${part.thickness} mm)`;
+  hudSelection.classList.remove('hidden');
 
   if (isIsolated) {
     applyIsolation(true);
@@ -478,7 +463,8 @@ function clearSelection() {
   if (isLiteMode && wasOpen) {
     onResize();
   }
-  hudSelection.textContent = 'Aucune pièce sélectionnée (Cliquez sur une pièce en 3D)';
+  hudSelection.textContent = '';
+  hudSelection.classList.add('hidden');
   if (isIsolated) {
     applyIsolation(false);
   }
@@ -488,7 +474,7 @@ function clearSelection() {
 function applyIsolation(enable) {
   isIsolated = enable;
   btnInspIsolate.classList.toggle('active-isolate', isIsolated);
-  btnInspIsolate.innerHTML = isIsolated ? '👁️ Tout réafficher' : '👁️ Isoler';
+  btnInspIsolate.innerHTML = isIsolated ? '👁️ Tout afficher' : '👁️ Isoler';
 
   serre.partMeshes.forEach((m) => {
     if (!isIsolated || !selectedPartId) {
@@ -617,8 +603,6 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
   const hit = raycastVisibleScene(e.clientX, e.clientY);
   const clipPlane = sectionManager.active ? sectionManager.clippingPlane : null;
 
-  // Si on clique sur une poignée du plan de coupe, sur la tranche coupée (distance < 22 mm du plan),
-  // ou sur le plan de coupe en dehors d'un élément mobile
   const isOnCutFace =
     hit && clipPlane && Math.abs(clipPlane.distanceToPoint(hit.point)) < 22;
   const mechType = hit ? getMovableMechanismType(hit.object) : null;
@@ -654,7 +638,6 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
       rightOffset: currentRightSideOffset,
       trolleyX: currentTrolleyOffsetX
     };
-    // Bloquer la rotation de caméra pendant qu'on manipule un élément mobile
     controls.enabled = false;
   }
 });
@@ -672,6 +655,7 @@ window.addEventListener('pointermove', (e) => {
     }
 
     if (dragStart.moved) {
+      hudSelection.classList.remove('hidden');
       if (dragTarget === 'roof') {
         const { ux, uy } = projectWorldDeltaToScreenUnit(
           dragStart.hitPoint,
@@ -680,14 +664,13 @@ window.addEventListener('pointermove', (e) => {
         const projPx = dx * ux + dy * uy;
         currentRoofAngle = Math.min(73.3, Math.max(0, dragStart.roofAngle + projPx * 0.32));
         sliderRoofAngle.value = String(currentRoofAngle);
-        const absAngle = Math.round(16.7 + currentRoofAngle);
         valRoofAngle.textContent =
           currentRoofAngle === 0
-            ? 'Posé sur vérin'
+            ? 'Fermé'
             : currentRoofAngle >= 73
-            ? 'Toit Vertical (90°)'
-            : `+${currentRoofAngle.toFixed(0)}° (Pente ${absAngle}°)`;
-        hudSelection.innerHTML = `🖐️ Manipulation Toit Ouvrant : <strong style="color:#38bdf8;">Pente ${absAngle}° (${currentRoofAngle >= 73 ? 'Vertical' : '+' + currentRoofAngle.toFixed(0) + '°'})</strong>`;
+            ? '90°'
+            : `+${currentRoofAngle.toFixed(0)}°`;
+        hudSelection.innerHTML = `Toit : <strong style="color:#38bdf8;">${valRoofAngle.textContent}</strong>`;
         applyKinematicsState();
       } else if (dragTarget === 'vent') {
         const { ux, uy } = projectWorldDeltaToScreenUnit(
@@ -698,9 +681,8 @@ window.addEventListener('pointermove', (e) => {
         currentVentAngle = Math.min(12, Math.max(0, dragStart.ventAngle + projPx * 0.08));
         sliderVentAngle.value = String(currentVentAngle);
         const strokeMm = Math.round((currentVentAngle / 12) * 90);
-        valVentAngle.textContent =
-          currentVentAngle === 0 ? '0° (0 mm)' : `${currentVentAngle.toFixed(1)}° (+${strokeMm} mm)`;
-        hudSelection.innerHTML = `🌡️ Manipulation Vérin Thermique : <strong style="color:#38bdf8;">Course +${strokeMm} mm (${currentVentAngle.toFixed(1)}°)</strong>`;
+        valVentAngle.textContent = currentVentAngle === 0 ? '0 mm' : `+${strokeMm} mm`;
+        hudSelection.innerHTML = `Vérin : <strong style="color:#38bdf8;">+${strokeMm} mm</strong>`;
         applyKinematicsState();
       } else if (dragTarget === 'sideLeft') {
         const { ux, uy } = projectWorldDeltaToScreenUnit(
@@ -711,12 +693,9 @@ window.addEventListener('pointermove', (e) => {
         currentLeftSideOffset = Math.min(600, Math.max(0, Math.round(dragStart.leftOffset + projPx * 2.4)));
         sliderSidesOffset.value = String(currentLeftSideOffset);
         const isWallParked = currentLeftSideOffset >= 580;
-        valSidesOffset.textContent = isWallParked
-          ? 'Posé contre le mur (90°)'
-          : `G: ${currentLeftSideOffset} / D: ${currentRightSideOffset} mm`;
-        hudSelection.innerHTML = `🚪 Manipulation Côté Gauche : <strong style="color:#38bdf8;">${
-          isWallParked ? 'Rangé à plat dans le plan arrière (90°)' : `Course ${currentLeftSideOffset} mm`
-        }</strong>`;
+        valSidesOffset.textContent =
+          currentLeftSideOffset === 0 ? 'Fermés' : isWallParked ? '90°' : `${currentLeftSideOffset} mm`;
+        hudSelection.innerHTML = `Côté G : <strong style="color:#38bdf8;">${valSidesOffset.textContent}</strong>`;
         applyKinematicsState();
       } else if (dragTarget === 'sideRight') {
         const { ux, uy } = projectWorldDeltaToScreenUnit(
@@ -727,12 +706,9 @@ window.addEventListener('pointermove', (e) => {
         currentRightSideOffset = Math.min(600, Math.max(0, Math.round(dragStart.rightOffset + projPx * 2.4)));
         sliderSidesOffset.value = String(currentRightSideOffset);
         const isWallParked = currentRightSideOffset >= 580;
-        valSidesOffset.textContent = isWallParked
-          ? 'Posé contre le mur (90°)'
-          : `G: ${currentLeftSideOffset} / D: ${currentRightSideOffset} mm`;
-        hudSelection.innerHTML = `🚪 Manipulation Côté Droit : <strong style="color:#38bdf8;">${
-          isWallParked ? 'Rangé à plat dans le plan arrière (90°)' : `Course ${currentRightSideOffset} mm`
-        }</strong>`;
+        valSidesOffset.textContent =
+          currentRightSideOffset === 0 ? 'Fermés' : isWallParked ? '90°' : `${currentRightSideOffset} mm`;
+        hudSelection.innerHTML = `Côté D : <strong style="color:#38bdf8;">${valSidesOffset.textContent}</strong>`;
         applyKinematicsState();
       } else if (dragTarget === 'trolley') {
         const { ux, uy } = projectWorldDeltaToScreenUnit(
@@ -741,7 +717,7 @@ window.addEventListener('pointermove', (e) => {
         );
         const projPx = dx * ux + dy * uy;
         currentTrolleyOffsetX = Math.min(2800, Math.max(-2800, Math.round(dragStart.trolleyX + projPx * 3.8)));
-        hudSelection.innerHTML = `🛞 Roulage Plateau Plantes : <strong style="color:#38bdf8;">X = ${currentTrolleyOffsetX > 0 ? '+' : ''}${currentTrolleyOffsetX} mm</strong>`;
+        hudSelection.innerHTML = `Plantes : <strong style="color:#38bdf8;">${currentTrolleyOffsetX > 0 ? '+' : ''}${currentTrolleyOffsetX} mm</strong>`;
         applyKinematicsState();
       } else if (dragTarget === 'sectionPlane') {
         const axisWorldDir =
@@ -761,7 +737,7 @@ window.addEventListener('pointermove', (e) => {
         valSectionPos.textContent = `${newPos} mm`;
         sectionManager.setConfig({ positionMm: newPos });
         sectionManager.syncTransforms();
-        hudSelection.innerHTML = `🔪 Plan de Coupe (${sectionManager.axis}) : <strong style="color:#38bdf8;">${newPos} mm</strong>`;
+        hudSelection.innerHTML = `Coupe ${sectionManager.axis} : <strong style="color:#38bdf8;">${newPos} mm</strong>`;
         requestRenderIfNotRequested();
       }
     }
@@ -789,6 +765,10 @@ window.addEventListener('pointerup', (e) => {
     renderer.domElement.style.cursor = 'grab';
     dragTarget = null;
     dragStart = null;
+    if (!selectedMesh) {
+      hudSelection.textContent = '';
+      hudSelection.classList.add('hidden');
+    }
     requestRenderIfNotRequested();
     if (wasMoved) return;
   }
@@ -818,17 +798,12 @@ document.getElementById('btn-insp-cutlist').addEventListener('click', () => {
   openCutlistModal(selectedPartId);
 });
 
-// Boutons Barre d'en-tête
-btnTopMeasure.addEventListener('click', () => measurementTool.toggle());
-btnPanelMeasure.addEventListener('click', () => measurementTool.toggle());
-document.getElementById('btn-clear-measures').addEventListener('click', () => measurementTool.clearAll());
+// Boutons Barre d'en-tête & Mesures
+btnTopMeasure?.addEventListener('click', () => measurementTool.toggle());
+document.getElementById('btn-clear-measures')?.addEventListener('click', () => measurementTool.clearAll());
 
-document.getElementById('chk-global-dims').addEventListener('change', (e) => {
+document.getElementById('chk-global-dims')?.addEventListener('change', (e) => {
   measurementTool.setGlobalDimsVisible(e.target.checked);
-});
-
-document.getElementById('chk-xray-poly').addEventListener('change', (e) => {
-  measurementTool.xrayPolycarbonate = e.target.checked;
 });
 
 // Visibilité par sous-ensembles
@@ -853,7 +828,7 @@ document.querySelectorAll('input[data-group]').forEach((chk) => {
   });
 });
 
-// Cinématique : Ouverture par le Haut — Vérin Auto (0..12°) + Levage Manuel jusqu'à la verticale (0..73.3°)
+// Cinématique concise
 const sliderVentAngle = document.getElementById('slider-vent-angle');
 const valVentAngle = document.getElementById('val-vent-angle');
 const sliderRoofAngle = document.getElementById('slider-roof-angle');
@@ -863,8 +838,8 @@ const valSidesOffset = document.getElementById('val-sides-offset');
 const sliderExplode = document.getElementById('slider-explode');
 const valExplode = document.getElementById('val-explode');
 
-let currentVentAngle = 0; // 0..12° (poussée directe du cylindre thermique +90 mm)
-let currentRoofAngle = 0; // 0..73.3° (16.7° + 73.3° = 90° toit vertical !)
+let currentVentAngle = 0;
+let currentRoofAngle = 0;
 let currentSidesOffset = 0;
 let currentLeftSideOffset = 0;
 let currentRightSideOffset = 0;
@@ -891,39 +866,19 @@ function applyKinematicsState() {
 sliderVentAngle.addEventListener('input', (e) => {
   currentVentAngle = Number(e.target.value);
   const strokeMm = Math.round((currentVentAngle / 12) * 90);
-  valVentAngle.textContent =
-    currentVentAngle === 0
-      ? '0° (0 mm)'
-      : `${currentVentAngle}° (+${strokeMm} mm)`;
+  valVentAngle.textContent = currentVentAngle === 0 ? '0 mm' : `+${strokeMm} mm`;
   applyKinematicsState();
-});
-
-document.querySelectorAll('button[data-vent]').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    currentVentAngle = Number(btn.getAttribute('data-vent'));
-    sliderVentAngle.value = String(currentVentAngle);
-    sliderVentAngle.dispatchEvent(new Event('input'));
-  });
 });
 
 sliderRoofAngle.addEventListener('input', (e) => {
   currentRoofAngle = Number(e.target.value);
-  const absAngle = Math.round(16.7 + currentRoofAngle);
   valRoofAngle.textContent =
     currentRoofAngle === 0
-      ? 'Posé sur vérin'
+      ? 'Fermé'
       : currentRoofAngle >= 73
-      ? 'Toit Vertical (90°)'
-      : `+${currentRoofAngle.toFixed(0)}° (Pente ${absAngle}°)`;
+      ? '90°'
+      : `+${currentRoofAngle.toFixed(0)}°`;
   applyKinematicsState();
-});
-
-document.querySelectorAll('button[data-roof]').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    currentRoofAngle = Number(btn.getAttribute('data-roof'));
-    sliderRoofAngle.value = String(currentRoofAngle);
-    sliderRoofAngle.dispatchEvent(new Event('input'));
-  });
 });
 
 sliderSidesOffset.addEventListener('input', (e) => {
@@ -932,19 +887,11 @@ sliderSidesOffset.addEventListener('input', (e) => {
   currentRightSideOffset = currentSidesOffset;
   valSidesOffset.textContent =
     currentSidesOffset === 0
-      ? 'En place (0 mm)'
+      ? 'Fermés'
       : currentSidesOffset >= 580
-      ? 'Contre le mur (90°)'
-      : `Écartés (${currentSidesOffset} mm)`;
+      ? '90°'
+      : `${currentSidesOffset} mm`;
   applyKinematicsState();
-});
-
-document.querySelectorAll('button[data-sides]').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    currentSidesOffset = Number(btn.getAttribute('data-sides'));
-    sliderSidesOffset.value = String(currentSidesOffset);
-    sliderSidesOffset.dispatchEvent(new Event('input'));
-  });
 });
 
 sliderExplode.addEventListener('input', (e) => {
@@ -998,30 +945,33 @@ sliderSectionPos.addEventListener('input', (e) => {
   requestRenderIfNotRequested();
 });
 
-// Vues Normalisées (Repère métier X=Largeur, Y=Profondeur, Z=Hauteur)
+function setIsoCameraForAspect() {
+  const aspect = Math.max(0.5, camera.aspect || 1.4);
+  const scale = aspect < 1.35 ? 1.35 / Math.max(0.75, aspect) : 1.05;
+  controls.target.set(0, 560, 0);
+  camera.position.set(1850 * scale, 1550 * scale, 2150 * scale);
+  controls.update();
+}
+
+// Vues Normalisées
 document.querySelectorAll('.view-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     const view = btn.getAttribute('data-view');
-    const center = new THREE.Vector3(0, 580, 0);
+    const center = new THREE.Vector3(0, 560, 0);
 
     if (view === 'iso') {
-      camera.position.set(1850, 1650, 2150);
-      controls.target.copy(center);
+      setIsoCameraForAspect();
     } else if (view === 'front') {
-      // Face Avant (Y_cad négatif -> three.z positif)
-      camera.position.set(0, 580, 2700);
+      camera.position.set(0, 560, 2750);
       controls.target.copy(center);
     } else if (view === 'top') {
-      // Vue de Dessus (Z_cad positif -> three.y positif)
       camera.position.set(0, 3200, 10);
       controls.target.set(0, 0, 0);
     } else if (view === 'side') {
-      // Vue de Profil Droit (X_cad positif -> three.x positif)
-      camera.position.set(2500, 580, 0);
+      camera.position.set(2500, 560, 0);
       controls.target.copy(center);
     } else if (view === 'reset') {
-      camera.position.set(1850, 1650, 2150);
-      controls.target.copy(center);
+      setIsoCameraForAspect();
       currentVentAngle = 0;
       currentRoofAngle = 0;
       currentSidesOffset = 0;
@@ -1030,11 +980,11 @@ document.querySelectorAll('.view-btn').forEach((btn) => {
       currentTrolleyOffsetX = 0;
       currentExplode = 0;
       sliderVentAngle.value = '0';
-      valVentAngle.textContent = '0° (0 mm)';
+      valVentAngle.textContent = '0 mm';
       sliderRoofAngle.value = '0';
-      valRoofAngle.textContent = 'Posé sur vérin';
+      valRoofAngle.textContent = 'Fermé';
       sliderSidesOffset.value = '0';
-      valSidesOffset.textContent = 'En place (0 mm)';
+      valSidesOffset.textContent = 'Fermés';
       sliderExplode.value = '0';
       valExplode.textContent = '0%';
       if (isIsolated) applyIsolation(false);
@@ -1046,12 +996,11 @@ document.querySelectorAll('.view-btn').forEach((btn) => {
 });
 
 // ============================================================================
-// MODALES : PLAN DE DÉCOUPE, NOMENCLATURE & AIDE
+// MODALES : PLAN DE DÉCOUPE & NOMENCLATURE
 // ============================================================================
 
 const modalCutlist = document.getElementById('modal-cutlist');
 const modalBom = document.getElementById('modal-bom');
-const modalHelp = document.getElementById('modal-help');
 const cutlistBody = document.getElementById('cutlist-modal-body');
 const bomBody = document.getElementById('bom-modal-body');
 const printSheet = document.getElementById('print-sheet');
@@ -1081,9 +1030,6 @@ function openBomModal() {
 
 document.getElementById('btn-top-cutlist').addEventListener('click', () => openCutlistModal());
 document.getElementById('btn-top-bom').addEventListener('click', () => openBomModal());
-document.getElementById('btn-top-help').addEventListener('click', () => {
-  modalHelp.classList.remove('hidden');
-});
 
 document.getElementById('btn-print-cutlist').addEventListener('click', () => {
   renderCutlistModal({
@@ -1097,12 +1043,12 @@ document.getElementById('btn-print-cutlist').addEventListener('click', () => {
 document.querySelectorAll('.btn-modal-close').forEach((btn) => {
   btn.addEventListener('click', () => {
     const targetId = btn.getAttribute('data-close');
-    if (targetId) document.getElementById(targetId).classList.add('hidden');
+    if (targetId) document.getElementById(targetId)?.classList.add('hidden');
   });
 });
 
-[modalCutlist, modalBom, modalHelp].forEach((modal) => {
-  modal.addEventListener('click', (e) => {
+[modalCutlist, modalBom].forEach((modal) => {
+  modal?.addEventListener('click', (e) => {
     if (e.target === modal) modal.classList.add('hidden');
   });
 });
@@ -1142,6 +1088,8 @@ function render() {
 // Déclencher un rendu uniquement quand on tourne la caméra ou redimensionne
 controls.addEventListener('change', requestRenderIfNotRequested);
 window.addEventListener('resize', onResize);
+window.visualViewport?.addEventListener('resize', onResize);
 
 onResize();
+setIsoCameraForAspect();
 requestRenderIfNotRequested();

@@ -55,12 +55,12 @@ export function renderPieceInspector2D(partId, containerEl) {
     const pTopRight = `${x0 + drawW},${y0}`;
     const hypLen = Math.round(Math.hypot(L, W));
 
-    // 1. Contour pointillé de la chute triangulaire supérieure + flan brut 496×145
-    // 2. Triangle bois conservé (P06) + trait de scie diagonal en ambre
+    // 1. Triangle supérieur = 2ème pignon (P06 #2 retourné tête-bêche dans le même rectangle 496×145)
+    // 2. Triangle inférieur = 1er pignon (P06 #1) + trait de scie diagonal en ambre
     shapePolygon = `
-      <polygon points="${pTopLeft} ${pTopRight} ${pBotRight}" fill="rgba(148, 163, 184, 0.06)" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3" />
-      <text x="${x0 + drawW * 0.64}" y="${y0 + drawH * 0.34}" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="9.5">
-        Chute triangulaire (éliminée)
+      <polygon points="${pTopLeft} ${pTopRight} ${pBotRight}" fill="rgba(56, 189, 248, 0.14)" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+      <text x="${x0 + drawW * 0.66}" y="${y0 + drawH * 0.34}" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="9.5" font-weight="bold">
+        2ème pignon P06 #2 (tête-bêche)
       </text>
       <polygon points="${pTopLeft} ${pBotLeft} ${pBotRight}" fill="rgba(191, 148, 96, 0.28)" stroke="#f8fafc" stroke-width="2" />
       <line x1="${x0}" y1="${y0}" x2="${x0 + drawW}" y2="${y0 + drawH}" stroke="#f59e0b" stroke-width="2.4" />
@@ -68,7 +68,7 @@ export function renderPieceInspector2D(partId, containerEl) {
     slopeAnnotation = `
       <path d="M ${x0 + drawW - 44} ${y0 + drawH} A 44 44 0 0 1 ${x0 + drawW - 41} ${y0 + drawH - 13}" fill="none" stroke="#f59e0b" stroke-width="1.6" />
       <text x="${x0 + drawW * 0.52}" y="${y0 + drawH * 0.52 - 7}" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="10" font-weight="bold">
-        🪚 Coupe diagonale ${hypLen} mm (∠ ${part.slopeDeg}°)
+        🪚 1 coupe diagonale (${hypLen} mm, ∠ ${part.slopeDeg}°) = 2 pignons P06
       </text>
       <text x="${x0 + 4}" y="${y0 + drawH + 14}" fill="#94a3b8" font-family="monospace" font-size="9.5">Arrière (H=145)</text>
       <text x="${x0 + drawW}" y="${y0 + drawH + 14}" text-anchor="end" fill="#94a3b8" font-family="monospace" font-size="9.5">Pointe Avant (H=0)</text>
