@@ -897,38 +897,42 @@ sliderExplode.addEventListener('input', (e) => {
   applyKinematicsState();
 });
 
-// Coupe CAD Dynamique (Stencil)
-const chkSectionActive = document.getElementById('chk-section-active');
+// Coupe CAD Dynamique (Stencil) — s'active au clic sur un axe, se désactive si on reclique sur l'axe actif
 const sliderSectionPos = document.getElementById('slider-section-pos');
 const valSectionPos = document.getElementById('val-section-pos');
 const btnSectionFlip = document.getElementById('btn-section-flip');
 const axisBtns = document.querySelectorAll('.axis-btn');
 
-chkSectionActive.addEventListener('change', (e) => {
-  const active = e.target.checked;
-  sliderSectionPos.disabled = !active;
-  sectionManager.setConfig({ active });
-  sectionManager.syncTransforms();
-  requestRenderIfNotRequested();
-});
-
 axisBtns.forEach((btn) => {
   btn.addEventListener('click', () => {
+    const isAlreadyActive = btn.classList.contains('active');
+
+    if (isAlreadyActive) {
+      btn.classList.remove('active');
+      sliderSectionPos.disabled = true;
+      sectionManager.setConfig({ active: false });
+      sectionManager.syncTransforms();
+      requestRenderIfNotRequested();
+      return;
+    }
+
     axisBtns.forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
     const axis = btn.getAttribute('data-axis');
     const bounds = sectionManager.getBoundsForAxis(axis);
+    sliderSectionPos.disabled = false;
     sliderSectionPos.min = String(bounds.min);
     sliderSectionPos.max = String(bounds.max);
     sliderSectionPos.value = String(bounds.defaultPos);
     valSectionPos.textContent = `${bounds.defaultPos} mm`;
-    sectionManager.setConfig({ axis, positionMm: bounds.defaultPos });
+    sectionManager.setConfig({ active: true, axis, positionMm: bounds.defaultPos });
     sectionManager.syncTransforms();
     requestRenderIfNotRequested();
   });
 });
 
 btnSectionFlip.addEventListener('click', () => {
+  if (!sectionManager.active) return;
   sectionManager.setConfig({ flipped: !sectionManager.flipped });
   sectionManager.syncTransforms();
   requestRenderIfNotRequested();
