@@ -246,12 +246,14 @@ export const PARTS_CATALOG = {
     thickness: 10,
     shapeType: 'rect_board',
     holes: [
-      { x: 130, y: 75, d: 5 },
-      { x: 1000, y: 75, d: 5 },
-      { x: 1870, y: 75, d: 5 },
-      { x: 1000, y: 535, d: 5 }
+      { x: 110, y: 100, d: 5 },
+      { x: 150, y: 100, d: 5 },
+      { x: 980, y: 100, d: 5 },
+      { x: 1020, y: 100, d: 5 },
+      { x: 1850, y: 100, d: 5 },
+      { x: 1890, y: 100, d: 5 }
     ],
-    notes: 'Conserve la longueur 2000 mm (débords G/D de 23 mm) et 660 mm de rampant.'
+    notes: 'Conserve la longueur 2000 mm (débords G/D de 23 mm) et 660 mm de rampant. 6 perçages Ø5 mm (Y=100 mm) alignés sur les 3 charnières Q01.'
   },
 
   P11: {
@@ -337,7 +339,7 @@ export const PARTS_CATALOG = {
       { x: 20, y: 45, d: 5 },
       { x: 60, y: 45, d: 5 }
     ],
-    notes: 'Fixées en sommet des 3 montants AVANT P04 (axe charnière en bas de pente).'
+    notes: 'Charnon fixe (80×30 mm) vissé à plat sur le sommet des 3 montants AVANT P04 (Z=1045) • Gond Ø8 mm coaxial (Y=-223, Z=1050.5) • Charnon mobile (80×30 mm) boulonné sous le toit P10.'
   },
 
   Q02: {

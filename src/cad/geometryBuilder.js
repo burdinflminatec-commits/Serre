@@ -277,7 +277,7 @@ export function buildSerreAssembly(materials, isLite = false) {
     solidMeshes,
     partMeshes
   });
-  meshP12.position.copy(cadToThree(0, 0, 1073));
+  meshP12.position.copy(cadToThree(0, 0, 1060));
   meshP12.userData.basePosition.copy(meshP12.position);
   groups.backWall.add(meshP12);
 
@@ -476,11 +476,13 @@ export function buildSerreAssembly(materials, isLite = false) {
 
   // ==========================================================================
   // 4. TOIT OUVRANT PAR LE HAUT (roofPivot) :
-  // Charnières à l'AVANT (bas de pente : Y_cad = -223 mm, Z_cad = 1056 mm)
+  // Axe des 3 charnières Q01 à l'AVANT (bas de pente : Y_cad = -223 mm, Z_cad = 1050.5 mm)
   // Ouverture par le HAUT (arrière : Y_cad = +223..250 mm, Z_cad = 1195 mm)
-  // À Y_cad = +250, la sous-face du toit arrive à 1056 + 473*tan(16.7°) = 1198 mm (> 1195 mm)
+  // Sous-face de la plaque polycarbonate P10 à y_loc = +3.5 mm (plaquée sur les charnons mobiles Q01)
   // ==========================================================================
-  const frontHingePivotThree = cadToThree(0, -223, 1056);
+  const HINGE_Y_CAD = -223;
+  const HINGE_Z_CAD = 1050.5;
+  const frontHingePivotThree = cadToThree(0, HINGE_Y_CAD, HINGE_Z_CAD);
   groups.roofPivot.position.copy(frontHingePivotThree);
 
   // Groupe interne incliné de base à +16.7° (monte de l'avant z=+223 vers l'arrière z=-250)
@@ -488,7 +490,7 @@ export function buildSerreAssembly(materials, isLite = false) {
   roofSlopeGroup.rotation.x = ROOF_SLOPE_RAD;
   groups.roofPivot.add(roofSlopeGroup);
 
-  // Plaque Polycarbonate de Toit P10 (2000 × 660 × 10 mm)
+  // Plaque Polycarbonate de Toit P10 (2000 × 660 × 10 mm, sous-face à y_loc = +3.5 mm)
   const geomP10 = createExtrudedBoardGeometry(2000, 660, 10, PARTS_CATALOG.P10.holes, isLite);
   geomP10.rotateX(-Math.PI / 2);
 
@@ -505,17 +507,17 @@ export function buildSerreAssembly(materials, isLite = false) {
     solidMeshes,
     partMeshes
   });
-  meshP10.position.set(0, 12, -245);
+  meshP10.position.set(0, 8.5, -245);
   meshP10.userData.basePosition.copy(meshP10.position);
   roofSlopeGroup.add(meshP10);
 
-  // 2 Lattes Raidisseurs Sous-Toit P11 (890 × 68 × 27 mm)
+  // 2 Lattes Raidisseurs Sous-Toit P11 (890 × 68 × 27 mm, plaquées sous P10 de y_loc = -23.5 à +3.5 mm)
   const geomP11 = createExtrudedBoardGeometry(890, 68, 27, PARTS_CATALOG.P11.holes, isLite);
   geomP11.rotateX(-Math.PI / 2);
 
   const slatPositions = [
-    { label: 'P11 #1 (Traverse Sous-Toit Avant Charnières)', zRamp: -35 },
-    { label: 'P11 #2 (Traverse Sous-Toit Arrière Vérin)', zRamp: -375 }
+    { label: 'P11 #1 (Traverse Sous-Toit Avant)', zRamp: -85 },
+    { label: 'P11 #2 (Traverse Sous-Toit Arrière Vérin)', zRamp: -405 }
   ];
   slatPositions.forEach((sp) => {
     const meshP11 = buildPartMesh({
@@ -530,32 +532,132 @@ export function buildSerreAssembly(materials, isLite = false) {
       solidMeshes,
       partMeshes
     });
-    meshP11.position.set(0, -6.5, sp.zRamp);
+    meshP11.position.set(0, -10, sp.zRamp);
     meshP11.userData.basePosition.copy(meshP11.position);
     roofSlopeGroup.add(meshP11);
   });
 
   // ==========================================================================
-  // 5. QUINCAILLERIE : 3 Charnières Q01 + Compas Vérin TecTake Q02 (46×26.5 cm)
+  // 5. QUINCAILLERIE : 3 Charnières articulées Q01 (80×60 mm) + Vérin Q02 + 8 × Hettich Q03
   // ==========================================================================
-  const geomQ01 = createExtrudedBoardGeometry(80, 60, 4, PARTS_CATALOG.Q01.holes, isLite);
+  // Charnon unitaire 80 × 30 × 3.5 mm avec ses 2 perçages Ø 5 mm (x = 20 et 60 mm, y = 15 mm)
+  const leafHoles = [
+    { x: 20, y: 15, d: 5 },
+    { x: 60, y: 15, d: 5 }
+  ];
+  const geomQ01FixedLeaf = createExtrudedBoardGeometry(80, 30, 3.5, leafHoles, isLite);
+  geomQ01FixedLeaf.rotateX(-Math.PI / 2);
+  // Posé à plat sur le sommet horizontal de P04 (Z_cad = 1045..1048.5 mm => dy = -5.5..-2.0 mm, dz = 0..-30 mm)
+  geomQ01FixedLeaf.translate(0, -3.75, -15);
+
+  const geomQ01MovingLeaf = createExtrudedBoardGeometry(80, 30, 3.5, leafHoles, isLite);
+  geomQ01MovingLeaf.rotateX(-Math.PI / 2);
+  // Plaqué sous la face inférieure de P10 (dy_rot = 0..+3.5 mm, dz_rot = 0..-30 mm le long du rampant)
+  geomQ01MovingLeaf.translate(0, 1.75, -15);
+
   const hingeMeshes = [];
   backPostX.forEach((xCad, idx) => {
+    const posLabel = idx === 0 ? 'Gauche' : idx === 1 ? 'Centre' : 'Droite';
     const meshQ01 = buildPartMesh({
-      geometry: geomQ01,
+      geometry: geomQ01FixedLeaf,
       material: materials.metal_galva,
       edgeMaterial: materials.edge_line,
       partId: 'Q01',
-      instanceId: `Q01 #${idx + 1}`,
+      instanceId: `Q01 #${idx + 1} (Charnière Avant ${posLabel} X=${xCad})`,
       subGroup: 'hardware',
-      explodeVecCad: { x: 0, y: -180, z: 140 },
+      explodeVecCad: { x: 0, y: -140, z: 120 },
       isLite,
       solidMeshes,
       partMeshes
     });
-    meshQ01.position.copy(cadToThree(xCad, -225, 1045));
+    meshQ01.position.copy(cadToThree(xCad, HINGE_Y_CAD, HINGE_Z_CAD));
     meshQ01.userData.basePosition.copy(meshQ01.position);
     meshQ01.userData.xCad = xCad;
+
+    // Groupe du charnon supérieur mobile articulé exactement sur l'axe du gond (0, 0, 0)
+    const movingLeafPivot = new THREE.Group();
+    movingLeafPivot.rotation.x = ROOF_SLOPE_RAD;
+    meshQ01.add(movingLeafPivot);
+    meshQ01.userData.movingLeafPivot = movingLeafPivot;
+
+    const movingLeafMesh = new THREE.Mesh(geomQ01MovingLeaf, materials.metal_galva);
+    if (!isLite) {
+      movingLeafMesh.add(
+        new THREE.LineSegments(new THREE.EdgesGeometry(geomQ01MovingLeaf, 25), materials.edge_line)
+      );
+    }
+    movingLeafPivot.add(movingLeafMesh);
+
+    const subQ01Meshes = [movingLeafMesh];
+
+    if (isLite) {
+      // Mode Lite : 1 gond cylindrique continu Ø 8 × 80 mm coaxial avec l'axe de rotation
+      const barrelGeom = new THREE.CylinderGeometry(4, 4, 80, 10);
+      barrelGeom.rotateZ(Math.PI / 2);
+      const barrelMesh = new THREE.Mesh(barrelGeom, materials.metal_galva);
+      meshQ01.add(barrelMesh);
+      subQ01Meshes.push(barrelMesh);
+    } else {
+      // Mode HD : Axe inox central Ø 4.8 × 82 mm + 5 charnons cylindriques imbriqués (3 fixes + 2 mobiles) + 4 têtes de vis
+      const pinGeom = new THREE.CylinderGeometry(2.4, 2.4, 83, 14);
+      pinGeom.rotateZ(Math.PI / 2);
+      const pinMesh = new THREE.Mesh(pinGeom, materials.metal_dark);
+      meshQ01.add(pinMesh);
+      subQ01Meshes.push(pinMesh);
+
+      const knuckleSegGeom = new THREE.CylinderGeometry(4, 4, 15.4, 16);
+      knuckleSegGeom.rotateZ(Math.PI / 2);
+
+      // 3 charnons cylindriques solidaires du charnon fixe (x = -32, 0, +32 mm)
+      [-32, 0, 32].forEach((kx) => {
+        const kMesh = new THREE.Mesh(knuckleSegGeom, materials.metal_galva);
+        kMesh.position.set(kx, 0, 0);
+        kMesh.add(
+          new THREE.LineSegments(new THREE.EdgesGeometry(knuckleSegGeom, 25), materials.edge_line)
+        );
+        meshQ01.add(kMesh);
+        subQ01Meshes.push(kMesh);
+      });
+
+      // 2 charnons cylindriques solidaires du charnon mobile (x = -16, +16 mm)
+      [-16, 16].forEach((kx) => {
+        const kMesh = new THREE.Mesh(knuckleSegGeom, materials.metal_galva);
+        kMesh.position.set(kx, 0, 0);
+        kMesh.add(
+          new THREE.LineSegments(new THREE.EdgesGeometry(knuckleSegGeom, 25), materials.edge_line)
+        );
+        movingLeafPivot.add(kMesh);
+        subQ01Meshes.push(kMesh);
+      });
+
+      // Têtes de vis inox sur le charnon fixe (vissées verticalement dans le sommet de P04)
+      // et boulons/rondelles d'étanchéité traversant le toit P10 sur le charnon mobile
+      const screwHeadGeom = new THREE.CylinderGeometry(4.2, 2.5, 1.8, 12);
+      const roofBoltCapGeom = new THREE.CylinderGeometry(5.5, 5.5, 2.2, 14);
+      [-20, 20].forEach((sx) => {
+        const fixedScrew = new THREE.Mesh(screwHeadGeom, materials.metal_dark);
+        fixedScrew.position.set(sx, -1.5, -15);
+        meshQ01.add(fixedScrew);
+
+        const movingScrew = new THREE.Mesh(screwHeadGeom, materials.metal_dark);
+        movingScrew.rotation.x = Math.PI;
+        movingScrew.position.set(sx, -0.4, -15);
+        movingLeafPivot.add(movingScrew);
+
+        const topWasherCap = new THREE.Mesh(roofBoltCapGeom, materials.metal_dark);
+        topWasherCap.position.set(sx, 14.5, -15);
+        movingLeafPivot.add(topWasherCap);
+
+        subQ01Meshes.push(fixedScrew, movingScrew, topWasherCap);
+      });
+    }
+
+    subQ01Meshes.forEach((subM) => {
+      subM.userData = meshQ01.userData;
+      partMeshes.push(subM);
+      solidMeshes.push(subM);
+    });
+
     hingeMeshes.push(meshQ01);
     groups.hardware.add(meshQ01);
   });
@@ -851,29 +953,38 @@ export function buildSerreAssembly(materials, isLite = false) {
     const openRad = (effectiveRoofDeg * Math.PI) / 180;
     const ventRad = (ventAngleDeg * Math.PI) / 180;
 
-    // Pivot du toit sur les charnières AVANT (Y=-223, Z=1056) -> le HAUT (arrière) se soulève jusqu'à la verticale
-    const hingeOrigin = cadToThree(0, -223, 1056);
+    // Pivot du toit sur l'axe exact des 3 charnières AVANT (Y=-223, Z=1050.5) -> le HAUT (arrière) se soulève jusqu'à la verticale
+    const hingeOrigin = cadToThree(0, HINGE_Y_CAD, HINGE_Z_CAD);
     groups.roofPivot.position.copy(hingeOrigin);
     roofSlopeGroup.rotation.x = ROOF_SLOPE_RAD;
-    meshP10.userData.basePosition.set(0, 12, -245);
-    roofSlopeGroup.children[1].userData.basePosition.set(0, -6.5, -35);
-    roofSlopeGroup.children[2].userData.basePosition.set(0, -6.5, -405);
+    meshP10.userData.basePosition.set(0, 8.5, -245);
+    roofSlopeGroup.children[1].userData.basePosition.set(0, -10, -85);
+    roofSlopeGroup.children[2].userData.basePosition.set(0, -10, -405);
 
     groups.roofPivot.rotation.x = openRad;
 
+    // Articulation synchronisée des 3 charnières Q01 :
+    // - Le charnon inférieur reste fixe à plat sur le sommet de P04 (Z=1045..1048.5 mm)
+    // - Le charnon supérieur pivote autour du gond (Y=-223, Z=1050.5) exactement avec le toit (ROOF_SLOPE_RAD + openRad)
     hingeMeshes.forEach((hm) => {
-      hm.userData.basePosition.copy(cadToThree(hm.userData.xCad, -225, 1048));
+      hm.userData.basePosition.copy(cadToThree(hm.userData.xCad, HINGE_Y_CAD, HINGE_Z_CAD));
+      if (hm.userData.movingLeafPivot) {
+        hm.userData.movingLeafPivot.rotation.x = ROOF_SLOPE_RAD + openRad;
+      }
     });
 
-    // Support du cylindre fixé contre le flanc du montant central arrière P02 #2 (X=+58, Y_cad=+165, Z_cad=1140)
-    // Décalé à X=+58 mm pour ne pas gêner la traverse centrale P12 #2 (X=-35..+35 mm)
-    const bracketZCad = 1140;
+    // Support du cylindre fixé contre le flanc du montant central arrière P02 #2 (X=+58, Y_cad=+165, Z_cad=1122)
+    // Décalé à X=+58 mm pour ne pas gêner la traverse centrale P12 (X=-22.5..+22.5 mm)
+    const bracketZCad = 1122;
     meshQ02.userData.basePosition.copy(cadToThree(58, 165, bracketZCad));
 
-    // Hauteur de la sous-face de la traverse P11 #2 à l'aplomb du piston (dist = 405 mm de la charnière avant)
+    // Hauteur de la sous-face de la traverse P11 #2 (y_loc = -23.5 mm) à l'aplomb du piston (dist = 405 mm de l'axe charnière)
     const distFromHinge = 405;
     const totalSlopeRad = ROOF_SLOPE_RAD + ventRad;
-    const roofUndersideY = hingeOrigin.y + distFromHinge * Math.sin(totalSlopeRad) - 18;
+    const roofUndersideY =
+      hingeOrigin.y +
+      distFromHinge * Math.sin(totalSlopeRad) -
+      23.5 * Math.cos(totalSlopeRad);
 
     // Le patin du piston monte exactement jusqu'à toucher la sous-face de la traverse pour ventRad
     const tipLocalY = Math.max(14, roofUndersideY - bracketZCad - 8);
@@ -941,6 +1052,7 @@ export function buildSerreAssembly(materials, isLite = false) {
         m === blackCylMesh ||
         m === rodMesh ||
         m === padMesh ||
+        (m.userData?.partId === 'Q01' && m.parent !== groups.hardware) ||
         (m.userData?.partId === 'Q03' && m !== m.userData?.rootMesh && m.parent !== groups.hardware && m.parent !== groups.sideLeft && m.parent !== groups.sideRight)
       ) {
         return;
