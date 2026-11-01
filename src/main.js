@@ -164,6 +164,7 @@ if (btnTopPerf) {
     : 'Activer le Mode Lite (Tablette / Mobile)';
 
   btnTopPerf.addEventListener('click', () => {
+    saveViewStateToSession();
     const nextMode = isLiteMode ? 'hd' : 'lite';
     try {
       localStorage.setItem(PERF_STORAGE_KEY, nextMode);
@@ -1086,11 +1087,186 @@ function render() {
   renderer.render(scene, camera);
 }
 
+// ============================================================================
+// SAUVEGARDE & RESTAURATION D'ÉTAT LORS DE LA BASCULE NORMAL <-> LITE
+// ============================================================================
+const VIEW_STATE_SESSION_KEY = 'serre_cad_view_state_v1';
+
+function saveViewStateToSession() {
+  try {
+    const groupVisibility = {};
+    document.querySelectorAll('input[data-group]').forEach((chk) => {
+      groupVisibility[chk.getAttribute('data-group')] = chk.checked;
+    });
+
+    const state = {
+      cameraPos: camera.position.toArray(),
+      controlsTarget: controls.target.toArray(),
+      section: {
+        active: sectionManager.active,
+        axis: sectionManager.axis,
+        flipped: sectionManager.flipped,
+        positionMm: sectionManager.positionMm
+      },
+      kinematics: {
+        currentVentAngle,
+        currentRoofAngle,
+        currentSidesOffset,
+        currentLeftSideOffset,
+        currentRightSideOffset,
+        currentTrolleyOffsetX,
+        currentExplode
+      },
+      groupVisibility,
+      showGlobalDims: Boolean(document.getElementById('chk-global-dims')?.checked),
+      panelCollapsed: document.body.classList.contains('panel-collapsed'),
+      selectedInstanceId: selectedMesh?.userData?.instanceId || null,
+      selectedPartId: selectedPartId || null,
+      isIsolated,
+      measurements: measurementTool.measurements.map((m) => ({
+        pA: m.pA.toArray(),
+        pB: m.pB.toArray()
+      }))
+    };
+
+    sessionStorage.setItem(VIEW_STATE_SESSION_KEY, JSON.stringify(state));
+  } catch (_) {}
+}
+
+function restoreViewStateFromSession() {
+  try {
+    const raw = sessionStorage.getItem(VIEW_STATE_SESSION_KEY);
+    if (!raw) return false;
+    sessionStorage.removeItem(VIEW_STATE_SESSION_KEY);
+    const state = JSON.parse(raw);
+
+    // 1. Panneau replié
+    if (state.panelCollapsed) {
+      document.body.classList.add('panel-collapsed');
+      btnVpPanel?.classList.add('active');
+    }
+
+    // 2. Cinématique & Curseurs
+    if (state.kinematics) {
+      currentVentAngle = state.kinematics.currentVentAngle ?? 0;
+      currentRoofAngle = state.kinematics.currentRoofAngle ?? 0;
+      currentSidesOffset = state.kinematics.currentSidesOffset ?? 0;
+      currentLeftSideOffset = state.kinematics.currentLeftSideOffset ?? 0;
+      currentRightSideOffset = state.kinematics.currentRightSideOffset ?? 0;
+      currentTrolleyOffsetX = state.kinematics.currentTrolleyOffsetX ?? 0;
+      currentExplode = state.kinematics.currentExplode ?? 0;
+
+      sliderVentAngle.value = String(currentVentAngle);
+      const strokeMm = Math.round((currentVentAngle / 12) * 90);
+      valVentAngle.textContent = currentVentAngle === 0 ? '0 mm' : `+${strokeMm} mm`;
+
+      sliderRoofAngle.value = String(currentRoofAngle);
+      valRoofAngle.textContent =
+        currentRoofAngle === 0
+          ? 'Fermé'
+          : currentRoofAngle >= 73
+          ? '90°'
+          : `+${currentRoofAngle.toFixed(0)}°`;
+
+      sliderSidesOffset.value = String(currentLeftSideOffset);
+      valSidesOffset.textContent =
+        currentLeftSideOffset === 0
+          ? 'Fermés'
+          : currentLeftSideOffset >= 580
+          ? '90°'
+          : `${currentLeftSideOffset} mm`;
+
+      sliderExplode.value = String(currentExplode);
+      valExplode.textContent = `${currentExplode}%`;
+
+      applyKinematicsState();
+    }
+
+    // 3. Visibilité par sous-ensembles & Cotes hors-tout
+    if (state.groupVisibility) {
+      document.querySelectorAll('input[data-group]').forEach((chk) => {
+        const grp = chk.getAttribute('data-group');
+        if (grp in state.groupVisibility) {
+          chk.checked = Boolean(state.groupVisibility[grp]);
+          chk.dispatchEvent(new Event('change'));
+        }
+      });
+    }
+
+    const chkGlobal = document.getElementById('chk-global-dims');
+    if (chkGlobal && typeof state.showGlobalDims === 'boolean') {
+      chkGlobal.checked = state.showGlobalDims;
+      measurementTool.setGlobalDimsVisible(state.showGlobalDims);
+    }
+
+    // 4. Coupe 3D
+    if (state.section) {
+      const { active, axis, flipped, positionMm } = state.section;
+      const bounds = sectionManager.getBoundsForAxis(axis || 'X');
+      sliderSectionPos.min = String(bounds.min);
+      sliderSectionPos.max = String(bounds.max);
+      sliderSectionPos.value = String(positionMm ?? bounds.defaultPos);
+      valSectionPos.textContent = `${positionMm ?? bounds.defaultPos} mm`;
+      sliderSectionPos.disabled = !active;
+
+      axisBtns.forEach((b) => {
+        b.classList.toggle('active', Boolean(active && b.getAttribute('data-axis') === axis));
+      });
+
+      sectionManager.setConfig({
+        active: Boolean(active),
+        axis: axis || 'X',
+        flipped: Boolean(flipped),
+        positionMm: positionMm ?? bounds.defaultPos
+      });
+      sectionManager.syncTransforms();
+    }
+
+    // 5. Sélection & Isolation
+    if (state.selectedInstanceId || state.selectedPartId) {
+      const mesh =
+        serre.partMeshes.find((m) => m.userData.instanceId === state.selectedInstanceId) ||
+        serre.partMeshes.find((m) => m.userData.partId === state.selectedPartId);
+      if (mesh) {
+        selectPartByMesh(mesh);
+        if (state.isIsolated) {
+          applyIsolation(true);
+        }
+      }
+    }
+
+    // 6. Mesures 3D
+    if (Array.isArray(state.measurements)) {
+      state.measurements.forEach((m) => {
+        if (Array.isArray(m.pA) && Array.isArray(m.pB)) {
+          measurementTool._addMeasurement(
+            new THREE.Vector3().fromArray(m.pA),
+            new THREE.Vector3().fromArray(m.pB)
+          );
+        }
+      });
+    }
+
+    // 7. Caméra & Cible OrbitControls
+    onResize();
+    if (Array.isArray(state.cameraPos) && Array.isArray(state.controlsTarget)) {
+      camera.position.fromArray(state.cameraPos);
+      controls.target.fromArray(state.controlsTarget);
+      controls.update();
+    }
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 // Déclencher un rendu uniquement quand on tourne la caméra ou redimensionne
 controls.addEventListener('change', requestRenderIfNotRequested);
 window.addEventListener('resize', onResize);
 window.visualViewport?.addEventListener('resize', onResize);
 
 onResize();
-setIsoCameraForAspect();
+if (!restoreViewStateFromSession()) {
+  setIsoCameraForAspect();
+}
 requestRenderIfNotRequested();
