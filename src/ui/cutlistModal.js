@@ -147,20 +147,62 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
       const endMm = cut.startX + cut.length;
       const kerfX = padL + endMm * scale;
 
-      return `
-        <g class="cut-svg-part" data-part-id="${cut.partId}">
+      // Rendu spécifique selon le type de coupe (P06 coupe diagonale pignon, P11 délignage en 2, P12/P13 coupes 16.7°)
+      let shapeInnerSvg = '';
+      if (cut.diagonalGable) {
+        // Triangle P06 (145 mm à gauche -> 0 mm à droite) + triangle de chute au-dessus de la diagonale
+        const pTL = `${x},${barY}`;
+        const pBL = `${x},${barY + barH}`;
+        const pBR = `${x + w},${barY + barH}`;
+        const pTR = `${x + w},${barY}`;
+        shapeInnerSvg = `
+          <polygon points="${pTL} ${pTR} ${pBR}" fill="${isPrint ? '#f1f5f9' : 'rgba(148, 163, 184, 0.08)'}" stroke="#64748b" stroke-width="1" stroke-dasharray="3 2" />
+          <polygon points="${pTL} ${pBL} ${pBR}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
+          <line x1="${x}" y1="${barY}" x2="${x + w}" y2="${barY + barH}" stroke="#f59e0b" stroke-width="2.2" />
+          <text x="${x + w * 0.76}" y="${barY + 12}" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="8.5">Chute</text>
+          <text x="${x + w * 0.36}" y="${barY + 24}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="10" font-weight="bold">
+            ${cut.instanceLabel}
+          </text>
+          <text x="${x + w * 0.38}" y="${barY + 35}" text-anchor="middle" fill="${isPrint ? '#334155' : '#fde68a'}" font-family="monospace" font-size="9">
+            496×145→0 (∠16.7°)
+          </text>
+        `;
+      } else if (cut.ripInTwo) {
+        // Délignage longitudinal en 2 lattes de 68 mm (P11 #1 et P11 #2) dans la largeur de 145 mm
+        const midY = barY + barH / 2;
+        shapeInnerSvg = `
+          <rect x="${x}" y="${barY}" width="${Math.max(w, 4)}" height="${barH}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
+          <line x1="${x}" y1="${midY}" x2="${x + w}" y2="${midY}" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="5 3" />
+          <text x="${x + w / 2}" y="${barY + 13}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="10" font-weight="bold">
+            P11 #1 — Traverse Sous-Toit Avant (890 × 68 mm)
+          </text>
+          <text x="${x + w / 2}" y="${barY + 32}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="10" font-weight="bold">
+            P11 #2 — Traverse Sous-Toit Arrière (890 × 68 mm)
+          </text>
+        `;
+      } else {
+        shapeInnerSvg = `
           <rect x="${x}" y="${barY}" width="${Math.max(w, 4)}" height="${barH}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
           ${
             cut.bevel
-              ? `<line x1="${x + w - 8}" y1="${barY}" x2="${x + w}" y2="${barY + barH}" stroke="#f59e0b" stroke-width="2" />`
+              ? `
+                <line x1="${x + 7}" y1="${barY}" x2="${x}" y2="${barY + barH}" stroke="#f59e0b" stroke-width="2" />
+                <line x1="${x + w}" y1="${barY}" x2="${x + w - 7}" y2="${barY + barH}" stroke="#f59e0b" stroke-width="2" />
+              `
               : ''
           }
-          <text x="${x + w / 2}" y="${barY + 15}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="11" font-weight="bold">
+          <text x="${x + w / 2}" y="${barY + 15}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="10.5" font-weight="bold">
             ${cut.instanceLabel}
           </text>
-          <text x="${x + w / 2}" y="${barY + 30}" text-anchor="middle" fill="${isPrint ? '#334155' : '#cbd5e1'}" font-family="monospace" font-size="10">
-            ${cut.length} × ${part.width} mm ${cut.bevel ? `(Biseau ${cut.bevel})` : ''}
+          <text x="${x + w / 2}" y="${barY + 30}" text-anchor="middle" fill="${isPrint ? '#334155' : '#cbd5e1'}" font-family="monospace" font-size="9.5">
+            ${cut.length} × ${part.width} mm ${cut.bevel ? `(∠${cut.bevel})` : ''}
           </text>
+        `;
+      }
+
+      return `
+        <g class="cut-svg-part" data-part-id="${cut.partId}">
+          ${shapeInnerSvg}
           <!-- Trait de scie (4 mm) et cote cumulée -->
           ${
             endMm < board.length
@@ -217,9 +259,9 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
  */
 function renderPolycarbonate2D(sheet, highlightedPartId, isPrint = false) {
   const svgW = 1080;
-  const svgH = 260;
-  const padL = 36;
-  const padT = 28;
+  const svgH = 265;
+  const padL = 54;
+  const padT = 32;
   const drawW = 860;
   const drawH = (sheet.width / sheet.length) * drawW * 0.45; // proportion lisible
   const scaleX = drawW / sheet.length;
@@ -254,18 +296,34 @@ function renderPolycarbonate2D(sheet, highlightedPartId, isPrint = false) {
     })
     .join('');
 
+  // Lignes de coupe (longitudinale à Y=660 mm et recoupe à X=1900 mm sur P09) + zone de chute 100×300 mm
+  const cutY660 = padT + 660 * scaleY;
+  const cutX1900 = padL + 1900 * scaleX;
+  const p09TopY = padT + 664 * scaleY;
+  const p09BotY = padT + 964 * scaleY;
+
   return `
     <div class="${isPrint ? 'print-board-item' : 'board-row'}">
       <div class="board-row-header">
         <strong>${sheet.stockId} — ${sheet.label}</strong>
-        <span class="stock-pill">✅ En stock • Rendement 95%</span>
+        <span class="stock-pill">✅ En stock • Rendement 95% (Chute 100×300 + lisière 16 mm)</span>
       </div>
       <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" height="${svgH}" xmlns="http://www.w3.org/2000/svg">
         <rect x="${padL}" y="${padT}" width="${drawW}" height="${drawH}" fill="${isPrint ? '#fff' : '#0b1017'}" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" />
-        <text x="${padL + drawW / 2}" y="${padT - 8}" text-anchor="middle" fill="${isPrint ? '#000' : '#94a3b8'}" font-family="monospace" font-size="10.5">
-          Longueur brute : 2000 mm (Sens des alvéoles sur la pente de 660 mm ou la longueur)
+        <text x="${padL + drawW / 2}" y="${padT - 10}" text-anchor="middle" fill="${isPrint ? '#000' : '#94a3b8'}" font-family="monospace" font-size="10.5">
+          Longueur brute : 2000 mm • Largeur brute : 980 mm (1 coupe longitudinale à Y=660 mm + 1 recoupe à X=1900 mm)
         </text>
         ${panelsSvg}
+        <!-- Trait de coupe longitudinal rouge à Y = 660 mm -->
+        <line x1="${padL}" y1="${cutY660}" x2="${padL + drawW}" y2="${cutY660}" stroke="#ef4444" stroke-width="2" stroke-dasharray="5 3" />
+        <text x="${padL - 6}" y="${cutY660 + 3}" text-anchor="end" fill="#f87171" font-family="monospace" font-size="9.5" font-weight="bold">Y=660</text>
+        <text x="${padL - 6}" y="${padT + 8}" text-anchor="end" fill="#94a3b8" font-family="monospace" font-size="9">0</text>
+        <text x="${padL - 6}" y="${padT + drawH}" text-anchor="end" fill="#94a3b8" font-family="monospace" font-size="9">980</text>
+        <!-- Trait de recoupe à X = 1900 mm et Chute 100 × 300 mm -->
+        <line x1="${cutX1900}" y1="${p09TopY}" x2="${cutX1900}" y2="${p09BotY}" stroke="#ef4444" stroke-width="2" stroke-dasharray="4 2" />
+        <text x="${cutX1900}" y="${p09BotY + 14}" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9.5" font-weight="bold">X=1900</text>
+        <text x="${padL + drawW}" y="${p09BotY + 14}" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="9">2000</text>
+        <text x="${(cutX1900 + padL + drawW) / 2}" y="${(p09TopY + p09BotY) / 2 + 3}" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="8.5">Chute 100×300</text>
       </svg>
     </div>
   `;

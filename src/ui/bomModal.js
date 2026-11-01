@@ -30,7 +30,8 @@ export function renderBomModal(modalBodyEl, onViewPart2D) {
           <td style="font-family:var(--font-mono);">${p.thickness} mm</td>
           <td style="font-family:var(--font-mono);font-weight:600;color:#fde68a;">
             ${p.length} × ${p.width} mm
-            ${p.minLength ? `<div style="font-size:10.5px;color:#38bdf8;">Lmin: ${p.minLength} mm (Biseau ${p.bevelTopDeg}°)</div>` : ''}
+            ${p.shapeType === 'gable_sloped' ? `<div style="font-size:10.5px;color:#38bdf8;">Triangle : H=145 → 0 mm (∠${p.slopeDeg}°)</div>` : ''}
+            ${p.shapeType === 'sloped_brace' ? `<div style="font-size:10.5px;color:#38bdf8;">Coupes parallèles ∠${p.slopeDeg}°</div>` : ''}
           </td>
           <td>
             <div style="margin-bottom:3px;">${statusBadge}</div>

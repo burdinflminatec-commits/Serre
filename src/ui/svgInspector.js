@@ -46,14 +46,49 @@ export function renderPieceInspector2D(partId, containerEl) {
   let slopeAnnotation = '';
 
   if (part.shapeType === 'gable_sloped') {
-    // Lame P06 coupée en diagonale de 145 mm (droite/arrière) à 0 mm (gauche/avant)
-    const p1 = `${x0},${y0 + drawH}`;
-    const p2 = `${x0 + drawW},${y0 + drawH}`;
-    const p3 = `${x0 + drawW},${y0}`;
-    shapePolygon = `<polygon points="${p1} ${p2} ${p3}" fill="rgba(191, 148, 96, 0.22)" stroke="#f8fafc" stroke-width="2" />`;
+    // Lame P06 : Triangle rectangle dans un flan brut de 496 × 145 mm
+    // À Gauche (x = 0, Arrière) : hauteur = 145 mm (de y0 à y0 + drawH)
+    // À Droite (x = 496 mm, Avant) : hauteur = 0 mm (pointe en bas à droite : x0 + drawW, y0 + drawH)
+    const pTopLeft = `${x0},${y0}`;
+    const pBotLeft = `${x0},${y0 + drawH}`;
+    const pBotRight = `${x0 + drawW},${y0 + drawH}`;
+    const pTopRight = `${x0 + drawW},${y0}`;
+    const hypLen = Math.round(Math.hypot(L, W));
+
+    // 1. Contour pointillé de la chute triangulaire supérieure + flan brut 496×145
+    // 2. Triangle bois conservé (P06) + trait de scie diagonal en ambre
+    shapePolygon = `
+      <polygon points="${pTopLeft} ${pTopRight} ${pBotRight}" fill="rgba(148, 163, 184, 0.06)" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3" />
+      <text x="${x0 + drawW * 0.64}" y="${y0 + drawH * 0.34}" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="9.5">
+        Chute triangulaire (éliminée)
+      </text>
+      <polygon points="${pTopLeft} ${pBotLeft} ${pBotRight}" fill="rgba(191, 148, 96, 0.28)" stroke="#f8fafc" stroke-width="2" />
+      <line x1="${x0}" y1="${y0}" x2="${x0 + drawW}" y2="${y0 + drawH}" stroke="#f59e0b" stroke-width="2.4" />
+    `;
     slopeAnnotation = `
-      <path d="M ${x0 + 38} ${y0 + drawH} A 38 38 0 0 0 ${x0 + 35} ${y0 + drawH - 11}" fill="none" stroke="#f59e0b" stroke-width="1.5" />
-      <text x="${x0 + 46}" y="${y0 + drawH - 6}" fill="#fde68a" font-family="monospace" font-size="10.5" font-weight="bold">∠ ${part.slopeDeg}° (Pente Toit)</text>
+      <path d="M ${x0 + drawW - 44} ${y0 + drawH} A 44 44 0 0 1 ${x0 + drawW - 41} ${y0 + drawH - 13}" fill="none" stroke="#f59e0b" stroke-width="1.6" />
+      <text x="${x0 + drawW * 0.52}" y="${y0 + drawH * 0.52 - 7}" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="10" font-weight="bold">
+        🪚 Coupe diagonale ${hypLen} mm (∠ ${part.slopeDeg}°)
+      </text>
+      <text x="${x0 + 4}" y="${y0 + drawH + 14}" fill="#94a3b8" font-family="monospace" font-size="9.5">Arrière (H=145)</text>
+      <text x="${x0 + drawW}" y="${y0 + drawH + 14}" text-anchor="end" fill="#94a3b8" font-family="monospace" font-size="9.5">Pointe Avant (H=0)</text>
+    `;
+  } else if (part.shapeType === 'sloped_brace') {
+    // Traverse inclinée à 16.7° (P12 / P13) : coupes d'onglet parallèles à 16.7° aux deux extrémités
+    const skewPx = Math.min(Math.round(drawH * Math.tan((part.slopeDeg * Math.PI) / 180)), 22);
+    const p1 = `${x0 + skewPx},${y0}`;
+    const p2 = `${x0 + drawW},${y0}`;
+    const p3 = `${x0 + drawW - skewPx},${y0 + drawH}`;
+    const p4 = `${x0},${y0 + drawH}`;
+    shapePolygon = `
+      <polygon points="${p1} ${p2} ${p3} ${p4}" fill="rgba(191, 148, 96, 0.24)" stroke="#f8fafc" stroke-width="2" />
+      <line x1="${x0 + skewPx}" y1="${y0}" x2="${x0}" y2="${y0 + drawH}" stroke="#f59e0b" stroke-width="2.2" />
+      <line x1="${x0 + drawW}" y1="${y0}" x2="${x0 + drawW - skewPx}" y2="${y0 + drawH}" stroke="#f59e0b" stroke-width="2.2" />
+    `;
+    slopeAnnotation = `
+      <text x="${x0 + drawW / 2}" y="${y0 + drawH + 15}" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="10" font-weight="bold">
+        Coupes parallèles ∠ ${part.slopeDeg}° aux 2 bouts (appui sur montants verticaux)
+      </text>
     `;
   } else {
     const fillCol =
@@ -65,31 +100,37 @@ export function renderPieceInspector2D(partId, containerEl) {
     const strokeCol = part.materialType === 'polycarbonate' ? '#38bdf8' : '#f8fafc';
 
     shapePolygon = `<rect x="${x0}" y="${y0}" width="${drawW}" height="${drawH}" fill="${fillCol}" stroke="${strokeCol}" stroke-width="2" />`;
-
-    if (part.shapeType === 'bevel_post' && part.minLength) {
-      // Ligne pointillée du biseau à l'extrémité droite
-      const bevelX = x0 + (part.minLength / L) * drawW;
-      shapePolygon += `
-        <line x1="${bevelX}" y1="${y0}" x2="${bevelX}" y2="${y0 + drawH}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4 3" />
-      `;
-    }
   }
 
-  // Perçages débouchants en rouge + lignes d'axe pointillées + cotes
+  // Perçages débouchants en rouge + lignes d'axe pointillées + cotes X sans chevauchement
+  const labeledXs = new Set();
+  const distinctXs = Array.from(new Set((part.holes || []).map((h) => h.x)));
+  const shouldLabelAllXs = distinctXs.length <= 4;
+
   const holesSvg = (part.holes || [])
-    .map((h, idx) => {
+    .map((h) => {
       const cx = x0 + h.x * scaleX;
       const cy = y0 + drawH - h.y * scaleY;
       const r = Math.max(h.d * scaleX * 0.5, 3.2);
-      const showLabel = idx === 0 || idx === part.holes.length - 1;
+      let showXLabel = false;
+      if (!labeledXs.has(h.x)) {
+        if (
+          shouldLabelAllXs ||
+          h.x === distinctXs[0] ||
+          h.x === distinctXs[distinctXs.length - 1]
+        ) {
+          showXLabel = true;
+          labeledXs.add(h.x);
+        }
+      }
       return `
         <g>
           <line x1="${cx - r - 4}" y1="${cy}" x2="${cx + r + 4}" y2="${cy}" stroke="#ef4444" stroke-width="0.9" stroke-dasharray="2 2" />
           <line x1="${cx}" y1="${cy - r - 4}" x2="${cx}" y2="${cy + r + 4}" stroke="#ef4444" stroke-width="0.9" stroke-dasharray="2 2" />
           <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(239, 68, 68, 0.28)" stroke="#ef4444" stroke-width="1.5" />
           ${
-            showLabel
-              ? `<text x="${cx}" y="${cy - r - 5}" text-anchor="middle" fill="#fca5a5" font-family="monospace" font-size="9">X=${h.x}</text>`
+            showXLabel
+              ? `<text x="${cx}" y="${Math.max(y0 + 11, cy - r - 5)}" text-anchor="middle" fill="#fca5a5" font-family="monospace" font-size="9">X=${h.x}</text>`
               : ''
           }
         </g>
@@ -102,27 +143,28 @@ export function renderPieceInspector2D(partId, containerEl) {
   const sideH = Math.min(Math.max(T * 1.15, 22), 54);
   let sideProfileSvg = '';
 
-  if (part.shapeType === 'bevel_post') {
-    // Montrer clairement la coupe en biseau de 16.7° sur l'épaisseur (45 mm)
-    const bevelDropPx = 16;
-    const pA = `${x0},${sideY0 + sideH}`;
-    const pB = `${x0 + drawW},${sideY0 + sideH}`;
-    const pC = `${x0 + drawW},${sideY0}`;
-    const pD = `${x0 + drawW - bevelDropPx},${sideY0}`;
-    const pE = `${x0},${sideY0}`;
-
+  if (part.shapeType === 'gable_sloped') {
     sideProfileSvg = `
-      <text x="${x0}" y="${sideY0 - 12}" fill="#94a3b8" font-family="monospace" font-size="10">PROFIL ÉPAISSEUR (${T} mm) — COUPE BISEAU TÊTE ${part.bevelTopDeg}°</text>
-      <polygon points="${pA} ${pB} ${pC} ${pD} ${pE}" fill="rgba(169, 126, 77, 0.28)" stroke="#f8fafc" stroke-width="1.6" />
-      <line x1="${x0 + drawW - bevelDropPx}" y1="${sideY0}" x2="${x0 + drawW}" y2="${sideY0 + sideH}" stroke="#f59e0b" stroke-width="2" />
-      <text x="${x0 + drawW - 4}" y="${sideY0 + sideH + 15}" text-anchor="end" fill="#fde68a" font-family="monospace" font-size="10.5" font-weight="bold">
-        Lmax=${L} / Lmin=${part.minLength} mm (Biseau ${part.bevelTopDeg}°)
+      <text x="${x0}" y="${sideY0 - 12}" fill="#94a3b8" font-family="monospace" font-size="10">TRANCHE (${T} mm) • SYMÉTRIE GAUCHE / DROITE (×2 PIÈCES)</text>
+      <rect x="${x0}" y="${sideY0}" width="${drawW}" height="${sideH}" fill="rgba(148, 163, 184, 0.16)" stroke="#cbd5e1" stroke-width="1.5" />
+      ${(part.holes || [])
+        .map((h) => {
+          const hx = x0 + h.x * scaleX;
+          return `<line x1="${hx}" y1="${sideY0}" x2="${hx}" y2="${sideY0 + sideH}" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="3 2" />`;
+        })
+        .join('')}
+      <text x="${x0 + drawW / 2}" y="${sideY0 + sideH + 15}" text-anchor="middle" fill="#fde68a" font-family="monospace" font-size="9.5">
+        H=145 mm toujours côté Arrière (sur P07) • Pointe 0 mm côté Avant (sur P13)
       </text>
       ${renderDimLine(x0 - 20, sideY0, x0 - 20, sideY0 + sideH, `Ép. ${T}`, true)}
     `;
   } else {
+    const holeSpacingNote =
+      distinctXs.length > 4
+        ? ` • Pas régulier 150 mm (${distinctXs.join(', ')})`
+        : ` • ${(part.holes || []).length} perçages Ø${part.holes?.[0]?.d || 5} mm`;
     sideProfileSvg = `
-      <text x="${x0}" y="${sideY0 - 12}" fill="#94a3b8" font-family="monospace" font-size="10">TRANCHE / ÉPAISSEUR (${T} mm) • ${(part.holes || []).length} perçages Ø5 mm débouchants</text>
+      <text x="${x0}" y="${sideY0 - 12}" fill="#94a3b8" font-family="monospace" font-size="10">TRANCHE / ÉPAISSEUR (${T} mm)${holeSpacingNote}</text>
       <rect x="${x0}" y="${sideY0}" width="${drawW}" height="${sideH}" fill="rgba(148, 163, 184, 0.16)" stroke="#cbd5e1" stroke-width="1.5" />
       ${(part.holes || [])
         .map((h) => {
@@ -133,6 +175,20 @@ export function renderPieceInspector2D(partId, containerEl) {
       ${renderDimLine(x0 - 20, sideY0, x0 - 20, sideY0 + sideH, `Ép. ${T}`, true)}
     `;
   }
+
+  // Cote verticale de largeur W : à gauche pour P06 (car le côté de 145 mm est à gauche !), à droite pour les autres pièces
+  const vertDimSvg =
+    part.shapeType === 'gable_sloped'
+      ? `
+        <line x1="${x0 - 26}" y1="${y0}" x2="${x0}" y2="${y0}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
+        <line x1="${x0 - 26}" y1="${y0 + drawH}" x2="${x0}" y2="${y0 + drawH}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
+        ${renderDimLine(x0 - 38, y0, x0 - 38, y0 + drawH, `${W}`, true)}
+      `
+      : `
+        <line x1="${x0 + drawW}" y1="${y0}" x2="${x0 + drawW + 26}" y2="${y0}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
+        <line x1="${x0 + drawW}" y1="${y0 + drawH}" x2="${x0 + drawW + 26}" y2="${y0 + drawH}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
+        ${renderDimLine(x0 + drawW + 18, y0, x0 + drawW + 18, y0 + drawH, `${W} mm`, true)}
+      `;
 
   containerEl.innerHTML = `
     <svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">
@@ -155,9 +211,7 @@ export function renderPieceInspector2D(partId, containerEl) {
       <line x1="${x0 + drawW}" y1="${y0 - 26}" x2="${x0 + drawW}" y2="${y0}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
       ${renderDimLine(x0, y0 - 18, x0 + drawW, y0 - 18, `${L} mm`, false)}
 
-      <line x1="${x0 + drawW}" y1="${y0}" x2="${x0 + drawW + 26}" y2="${y0}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
-      <line x1="${x0 + drawW}" y1="${y0 + drawH}" x2="${x0 + drawW + 26}" y2="${y0 + drawH}" stroke="rgba(56,189,248,0.4)" stroke-width="1" />
-      ${renderDimLine(x0 + drawW + 18, y0, x0 + drawW + 18, y0 + drawH, `${W} mm`, true)}
+      ${vertDimSvg}
 
       <!-- Pièce & Trous débouchants -->
       ${shapePolygon}

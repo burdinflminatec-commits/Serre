@@ -105,10 +105,10 @@ export const PARTS_CATALOG = {
       { x: 372, y: 35, d: 5 },
       { x: 522, y: 35, d: 5 },
       { x: 672, y: 35, d: 5 },
-      { x: 820, y: 35, d: 5 },
-      { x: 990, y: 35, d: 5 }
+      { x: 785, y: 35, d: 5 },
+      { x: 1005, y: 35, d: 5 }
     ],
-    notes: 'Coupe droite à 90° (1045 mm, aligné avec le haut du vitrage avant P09).'
+    notes: 'Coupe droite à 90° (1045 mm, aligné avec le haut du vitrage avant P09 ; 5 trous bas au pas de 150 mm + 2 trous hauts à 785 et 1005 mm pour P09).'
   },
 
   P05: {
@@ -149,12 +149,12 @@ export const PARTS_CATALOG = {
     slopeDeg: 16.7,
     shapeType: 'gable_sloped',
     holes: [
-      { x: 60, y: 40, d: 5 },
-      { x: 60, y: 100, d: 5 },
-      { x: 200, y: 55, d: 5 },
-      { x: 340, y: 25, d: 5 }
+      { x: 60, y: 35, d: 5 },
+      { x: 60, y: 95, d: 5 },
+      { x: 190, y: 52, d: 5 },
+      { x: 330, y: 24, d: 5 }
     ],
-    notes: 'Coupe diagonale de 145 mm (arrière) à 0 mm (avant) suivant la pente 16.7°. Tenue par P07 et par la traverse inclinée P13.'
+    notes: 'Triangle rectangle : hauteur 145 mm à l’Arrière (X=0) décroissant en diagonale (pente 16.7°, trait de coupe 517 mm) jusqu’à 0 mm à l’Avant (X=496 mm). Fixée à X=60 mm dans le montant arrière P07 et à X=190 / 330 mm dans la traverse inclinée P13.'
   },
 
   P07: {
@@ -281,18 +281,19 @@ export const PARTS_CATALOG = {
     category: 'Structure Portique (Haut)',
     group: 'backWall',
     materialType: 'wood_post',
-    stockSource: 'Lambourde #6 (ou chute 70×45 mm)',
+    stockSource: 'Lambourde #6 (70×45 mm)',
     stockStatus: 'to_buy',
     qty: 1,
     length: 370,
     width: 70,
     thickness: 45,
-    shapeType: 'rect_board',
+    slopeDeg: 16.7,
+    shapeType: 'sloped_brace',
     holes: [
       { x: 25, y: 35, d: 5 },
       { x: 345, y: 35, d: 5 }
     ],
-    notes: 'Unique traverse centrale (X=0) reliant le montant Avant central (P04 #2) au montant Arrière central (P02 #2) sous le toit.'
+    notes: 'Unique traverse centrale (X=0, entraxe horizontal 356 mm / longueur rampante 370 mm, coupes d’extrémité parallèles à 16.7°) reliant le montant Avant central (P04 #2) au montant Arrière central (P02 #2) sous le toit.'
   },
 
   P13: {
@@ -301,19 +302,20 @@ export const PARTS_CATALOG = {
     category: 'Côtés Amovibles (G/D)',
     group: 'sides',
     materialType: 'wood_post',
-    stockSource: 'Chute Lambourde #5 + Lambourde #6 (70×45 mm)',
+    stockSource: 'Lambourde #6 (70×45 mm)',
     stockStatus: 'to_buy',
     qty: 2,
     length: 320,
     width: 70,
     thickness: 45,
-    shapeType: 'rect_board',
+    slopeDeg: 16.7,
+    shapeType: 'sloped_brace',
     holes: [
       { x: 30, y: 35, d: 5 },
-      { x: 160, y: 35, d: 5 },
-      { x: 290, y: 35, d: 5 }
+      { x: 140, y: 35, d: 5 },
+      { x: 280, y: 35, d: 5 }
     ],
-    notes: 'Relie les sommets des montants P08 et P07 sur chaque côté amovible pour soutenir et visser la lame en biais P06 sur toute sa longueur.'
+    notes: 'Relie les faces internes des montants P08 et P07 (entraxe horizontal 306 mm / longueur rampante 320 mm, coupes d’extrémité parallèles à 16.7°) sur chaque côté amovible pour soutenir et visser la lame en biais P06.'
   },
 
   Q01: {
@@ -417,7 +419,7 @@ export const STOCK_CUTLIST = {
         offcut: 0
       };
     } else {
-      // 14ème lame : 1 × P05 (496) + 2 × P06 (496) + 2 × P11 (délignées dans la chute de 890 mm)
+      // 14ème lame : 1 × P05 (496) + 2 × P06 (496 avec refente diagonale 145->0mm) + 2 × P11 (délignées 2×68mm dans 890 mm)
       return {
         stockId: 'LAME-14',
         label: 'Lame Terrasse #14 (Pin Vert Cerland)',
@@ -427,9 +429,9 @@ export const STOCK_CUTLIST = {
         status: 'in_stock',
         cuts: [
           { partId: 'P05', instanceLabel: 'P05 #14 (Côté D R7)', length: 496, startX: 0 },
-          { partId: 'P06', instanceLabel: 'P06 #1 (Pignon G Pente)', length: 496, startX: 500, bevel: '16.7°' },
-          { partId: 'P06', instanceLabel: 'P06 #2 (Pignon D Pente)', length: 496, startX: 1000, bevel: '16.7°' },
-          { partId: 'P11', instanceLabel: 'P11 ×2 (Délignage 2×68mm)', length: 890, startX: 1500 }
+          { partId: 'P06', instanceLabel: 'P06 #1 (Pignon G : 145→0mm)', length: 496, startX: 500, diagonalGable: true },
+          { partId: 'P06', instanceLabel: 'P06 #2 (Pignon D : 145→0mm)', length: 496, startX: 1000, diagonalGable: true },
+          { partId: 'P11', instanceLabel: 'P11 ×2 (Déligné 2×68mm)', length: 890, startX: 1500, ripInTwo: true }
         ],
         offcut: 10
       };
@@ -499,10 +501,9 @@ export const STOCK_CUTLIST = {
       status: 'to_buy',
       cuts: [
         { partId: 'P08', instanceLabel: 'P08 #1 (Côté G Avant)', length: 1030, startX: 0 },
-        { partId: 'P08', instanceLabel: 'P08 #2 (Côté D Avant)', length: 1030, startX: 1034 },
-        { partId: 'P13', instanceLabel: 'P13 #1 (Support P06 Côté G)', length: 320, startX: 2068 }
+        { partId: 'P08', instanceLabel: 'P08 #2 (Côté D Avant)', length: 1030, startX: 1034 }
       ],
-      offcut: 12
+      offcut: 336
     },
     {
       stockId: 'LAMB-06',
@@ -512,10 +513,11 @@ export const STOCK_CUTLIST = {
       thickness: 45,
       status: 'to_buy',
       cuts: [
-        { partId: 'P12', instanceLabel: 'P12 #1 (Traverse Centrale X=0)', length: 370, startX: 0 },
-        { partId: 'P13', instanceLabel: 'P13 #2 (Support P06 Côté D)', length: 320, startX: 374 }
+        { partId: 'P12', instanceLabel: 'P12 #1 (Portique Central X=0)', length: 370, startX: 0, bevel: '16.7°' },
+        { partId: 'P13', instanceLabel: 'P13 #1 (Support P06 Côté G)', length: 320, startX: 374, bevel: '16.7°' },
+        { partId: 'P13', instanceLabel: 'P13 #2 (Support P06 Côté D)', length: 320, startX: 698, bevel: '16.7°' }
       ],
-      offcut: 1706
+      offcut: 1382
     }
   ],
 
