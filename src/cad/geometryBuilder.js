@@ -269,9 +269,9 @@ export function buildSerreAssembly(materials, isLite = false) {
     groups.backWall.add(mesh);
   }
 
-  // 3 Montants Arrière P02 — Coupe droite à 90° (hauteur = 1180 mm)
+  // 3 Montants Arrière P02 — Coupe droite à 90° (hauteur = 1180 mm, 70 mm selon X × 45 mm selon Y)
   const geomP02 = createBeveledPostGeometry(70, 45, 1180, 1180);
-  const backPostX = [-870, 0, +870];
+  const backPostX = [-915, 0, +915];
   backPostX.forEach((xCad, idx) => {
     const mesh = buildPartMesh({
       geometry: geomP02,
@@ -290,7 +290,7 @@ export function buildSerreAssembly(materials, isLite = false) {
     groups.backWall.add(mesh);
   });
 
-  // Unique Traverse Haute Centrale P12 (370 × 70 × 45 mm à X=0) reliant P04 #2 (Avant, Y=-178) et P02 #2 (Arrière, Y=+178)
+  // Unique Traverse Haute Centrale P12 (entraxe 356 mm, section 70 × 45 mm à X=0) reliant P04 #2 (Y=-178) et P02 #2 (Y=+178)
   // Coupes d'aplomb verticales aux 2 extrémités (sans collision dans P04/P02) et plaquée sous les traverses P11 (Z_top = 1038 -> 1144.8 mm)
   const geomP12 = createSlopedBraceGeometry(356, 70, 45, 1038, 1144.8);
 
@@ -356,7 +356,7 @@ export function buildSerreAssembly(materials, isLite = false) {
   meshP09.userData.basePosition.copy(meshP09.position);
   groups.frontWall.add(meshP09);
 
-  // 3 Montants Avant P04 — Coupe droite à 90° (hauteur = 1045 mm)
+  // 3 Montants Avant P04 — Coupe droite à 90° (hauteur = 1045 mm, 70 mm selon X × 45 mm selon Y)
   const geomP04 = createBeveledPostGeometry(70, 45, 1045, 1045);
   backPostX.forEach((xCad, idx) => {
     const mesh = buildPartMesh({
@@ -378,6 +378,8 @@ export function buildSerreAssembly(materials, isLite = false) {
 
   // ==========================================================================
   // 3. CÔTÉS AMOVIBLES GAUCHE (sideLeft) & DROIT (sideRight)
+  // Les 2 lambourdes verticales P07 et P08 sont vissées sur leur PETITE face de 45 mm
+  // contre les lames P05 (donc 45 mm selon Y_cad et 70 mm rentrant vers l'intérieur selon X_cad) !
   // ==========================================================================
   const geomP05 = createExtrudedBoardGeometry(496, 145, 27, PARTS_CATALOG.P05.holes, isLite);
   // Pour les lames de côté P05, leur longueur (496) est orientée selon Y_cad (three.z)
@@ -385,12 +387,14 @@ export function buildSerreAssembly(materials, isLite = false) {
   geomP05.rotateY(Math.PI / 2);
 
   const geomP06 = createSlopedGableBoardGeometry(496, 145, 27, PARTS_CATALOG.P06.holes, isLite);
-  // Montants de côtés amovibles P07 (1155 mm) et P08 (1030 mm) — Coupe droite à 90°
-  const geomP07 = createBeveledPostGeometry(45, 70, 1155, 1155);
-  const geomP08 = createBeveledPostGeometry(45, 70, 1030, 1030);
+  // Montants de côtés amovibles P07 (1155 mm) et P08 (1030 mm) :
+  // widthX = 70 mm (profondeur rentrante selon X_cad), thicknessY = 45 mm (face de 45 mm vissée contre P05 selon Y_cad)
+  const geomP07 = createBeveledPostGeometry(70, 45, 1155, 1155);
+  const geomP08 = createBeveledPostGeometry(70, 45, 1030, 1030);
 
-  // Traverse inclinée P13 (entraxe 306 mm, 70 × 45 mm) reliant affleurant le sommet de P08 (Y=-153, Z=1030) au sommet de P07 (Y=+153, Z=1155)
-  const geomP13 = createSlopedBraceGeometry(306, 70, 45, 1030, 1155);
+  // Traverse inclinée P13 (entraxe 266 mm entre Y=-133 et Y=+133, 45 mm en Y/Z × 70 mm en X)
+  // reliant le sommet interne de P08 (Y=-133, Z=1030) au sommet interne de P07 (Y=+133, Z=1155)
+  const geomP13 = createSlopedBraceGeometry(266, 45, 70, 1030, 1155);
 
   const sidesConfig = [
     {
@@ -398,7 +402,7 @@ export function buildSerreAssembly(materials, isLite = false) {
       group: groups.sideLeft,
       dirX: -1,
       slatX: -950 - 27 / 2, // -963.5
-      postX: -950 + 45 / 2, // -927.5 (s'emboîte à l'intérieur contre P02/P04 qui sont à -905..-835)
+      postX: -950 + 70 / 2, // -915 (70 mm vers l'intérieur, de X=-950 à X=-880, aligné avec P02 #1 et P04 #1)
       instOffset: 0
     },
     {
@@ -406,7 +410,7 @@ export function buildSerreAssembly(materials, isLite = false) {
       group: groups.sideRight,
       dirX: 1,
       slatX: 950 + 27 / 2, // +963.5
-      postX: 950 - 45 / 2, // +927.5
+      postX: 950 - 70 / 2, // +915 (70 mm vers l'intérieur, de X=+880 à X=+950, aligné avec P02 #3 et P04 #3)
       instOffset: 7
     }
   ];
@@ -450,7 +454,7 @@ export function buildSerreAssembly(materials, isLite = false) {
     meshP06.userData.basePosition.copy(meshP06.position);
     sc.group.add(meshP06);
 
-    // Montant arrière du côté amovible P07 (Y de +153 à +223 => Y_center = +188)
+    // Montant arrière du côté amovible P07 : petite face de 45 mm contre P05 (Y de +133 à +178 => Y_center = +155.5, juste devant P02 qui est à +178..+223)
     const meshP07 = buildPartMesh({
       geometry: geomP07,
       material: materials.wood_post,
@@ -463,11 +467,11 @@ export function buildSerreAssembly(materials, isLite = false) {
       solidMeshes,
       partMeshes
     });
-    meshP07.position.copy(cadToThree(sc.postX, 188, 0));
+    meshP07.position.copy(cadToThree(sc.postX, 155.5, 0));
     meshP07.userData.basePosition.copy(meshP07.position);
     sc.group.add(meshP07);
 
-    // Montant avant du côté amovible P08 (Y de -223 à -153 => Y_center = -188)
+    // Montant avant du côté amovible P08 : petite face de 45 mm contre P05 (Y de -178 à -133 => Y_center = -155.5, juste derrière P04 qui est à -223..-178)
     const meshP08 = buildPartMesh({
       geometry: geomP08,
       material: materials.wood_post,
@@ -480,11 +484,11 @@ export function buildSerreAssembly(materials, isLite = false) {
       solidMeshes,
       partMeshes
     });
-    meshP08.position.copy(cadToThree(sc.postX, -188, 0));
+    meshP08.position.copy(cadToThree(sc.postX, -155.5, 0));
     meshP08.userData.basePosition.copy(meshP08.position);
     sc.group.add(meshP08);
 
-    // Traverse inclinée P13 entre les sommets de P08 (Y=-153, Z=1030) et P07 (Y=+153, Z=1155) pour tenir P06
+    // Traverse inclinée P13 entre les sommets de P08 (Y=-133, Z=1030) et P07 (Y=+133, Z=1155) pour soutenir P06
     const meshP13 = buildPartMesh({
       geometry: geomP13,
       material: materials.wood_post,

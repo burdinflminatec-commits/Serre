@@ -25,13 +25,13 @@ export const PARTS_CATALOG = {
     thickness: 27,
     shapeType: 'rect_board',
     holes: [
-      // 3 rangées de 2 vis (Montant G X=80, Montant C X=950, Montant D X=1820)
-      { x: 80, y: 35, d: 5 },
-      { x: 80, y: 110, d: 5 },
+      // 3 rangées de 2 vis centrées sur les montants P02 (X=-915 -> x=35, X=0 -> x=950, X=+915 -> x=1865)
+      { x: 35, y: 35, d: 5 },
+      { x: 35, y: 110, d: 5 },
       { x: 950, y: 35, d: 5 },
       { x: 950, y: 110, d: 5 },
-      { x: 1820, y: 35, d: 5 },
-      { x: 1820, y: 110, d: 5 }
+      { x: 1865, y: 35, d: 5 },
+      { x: 1865, y: 110, d: 5 }
     ],
     notes: '✅ Déjà coupées (8 lames sur votre stock de 12 × 190 cm). Aucune recoupe nécessaire.'
   },
@@ -76,12 +76,12 @@ export const PARTS_CATALOG = {
     thickness: 27,
     shapeType: 'rect_board',
     holes: [
-      { x: 80, y: 35, d: 5 },
-      { x: 80, y: 110, d: 5 },
+      { x: 35, y: 35, d: 5 },
+      { x: 35, y: 110, d: 5 },
       { x: 950, y: 35, d: 5 },
       { x: 950, y: 110, d: 5 },
-      { x: 1820, y: 35, d: 5 },
-      { x: 1820, y: 110, d: 5 }
+      { x: 1865, y: 35, d: 5 },
+      { x: 1865, y: 110, d: 5 }
     ],
     notes: '✅ P03 #1 à #4 (Rangs 1 à 4, déjà coupées) en bas • 🪚 P03 #5 (à couper dans la 1ère lame entière) placée tout en HAUT (Rang 7, Z=900..1045 mm) pour encadrer la fenêtre P09 et porter les 3 charnières Q01.'
   },
@@ -126,12 +126,12 @@ export const PARTS_CATALOG = {
     thickness: 27,
     shapeType: 'rect_board',
     holes: [
-      { x: 60, y: 35, d: 5 },
-      { x: 60, y: 110, d: 5 },
-      { x: 436, y: 35, d: 5 },
-      { x: 436, y: 110, d: 5 }
+      { x: 92.5, y: 35, d: 5 },
+      { x: 92.5, y: 110, d: 5 },
+      { x: 403.5, y: 35, d: 5 },
+      { x: 403.5, y: 110, d: 5 }
     ],
-    notes: '✅ 6 lames par côté (88,5 cm de haut) sont DÉJÀ MONTÉES • 🪚 Il ne reste que 2 lames P05 (Rang 7 G et D, 496 mm) à couper dans vos 2 lames entières de 2400 mm.'
+    notes: '✅ 6 lames par côté (88,5 cm de haut) sont DÉJÀ MONTÉES sur la petite face 45 mm des lambourdes P07/P08 (en retrait de 70 mm des bords pour laisser place à P02/P04) • 🪚 Reste 2 lames P05 (Rang 7 G et D) à couper.'
   },
 
   P06: {
@@ -150,17 +150,17 @@ export const PARTS_CATALOG = {
     slopeDeg: 16.7,
     shapeType: 'gable_sloped',
     holes: [
-      { x: 60, y: 35, d: 5 },
-      { x: 60, y: 95, d: 5 },
-      { x: 190, y: 52, d: 5 },
-      { x: 330, y: 24, d: 5 }
+      { x: 92.5, y: 35, d: 5 },
+      { x: 92.5, y: 95, d: 5 },
+      { x: 215, y: 48, d: 5 },
+      { x: 335, y: 22, d: 5 }
     ],
     notes: '🪚 Découpés dans la 2ème lame entière (2400 mm) : un seul tronçon de 496 × 145 mm refendu en diagonale (16.7°, trait 517 mm) donne les 2 pignons P06 (#1 Gauche et #2 Droit tête-bêche).'
   },
 
   P07: {
     partId: 'P07',
-    name: 'Montant Arrière de Côté Amovible (Coupe Droite 90°)',
+    name: 'Montant Arrière de Côté Amovible (Fixé sur face 45 mm)',
     category: 'Côtés Amovibles (G/D)',
     group: 'sides',
     materialType: 'wood_post',
@@ -168,25 +168,25 @@ export const PARTS_CATALOG = {
     stockStatus: 'in_stock',
     qty: 2,
     length: 1155,
-    width: 70,
-    thickness: 45,
+    width: 45,
+    thickness: 70,
     shapeType: 'rect_board',
     holes: [
-      { x: 72, y: 35, d: 5 },
-      { x: 222, y: 35, d: 5 },
-      { x: 372, y: 35, d: 5 },
-      { x: 522, y: 35, d: 5 },
-      { x: 672, y: 35, d: 5 },
-      { x: 822, y: 35, d: 5 },
-      { x: 972, y: 35, d: 5 },
-      { x: 1110, y: 35, d: 5 }
+      { x: 72, y: 22.5, d: 5 },
+      { x: 222, y: 22.5, d: 5 },
+      { x: 372, y: 22.5, d: 5 },
+      { x: 522, y: 22.5, d: 5 },
+      { x: 672, y: 22.5, d: 5 },
+      { x: 822, y: 22.5, d: 5 },
+      { x: 972, y: 22.5, d: 5 },
+      { x: 1110, y: 22.5, d: 5 }
     ],
-    notes: '✅ Déjà montés sur vos 2 côtés (actuellement ~1204 mm) • 🪚 Recouper simplement le haut de -49 mm en place pour les ramener à 1155 mm (sous la pente du toit).'
+    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord arrière pour s’emboîter devant P02) • 🪚 Recouper le haut de -49 mm (→ 1155 mm).'
   },
 
   P08: {
     partId: 'P08',
-    name: 'Montant Avant de Côté Amovible (Coupe Droite 90°)',
+    name: 'Montant Avant de Côté Amovible (Fixé sur face 45 mm)',
     category: 'Côtés Amovibles (G/D)',
     group: 'sides',
     materialType: 'wood_post',
@@ -194,19 +194,19 @@ export const PARTS_CATALOG = {
     stockStatus: 'in_stock',
     qty: 2,
     length: 1030,
-    width: 70,
-    thickness: 45,
+    width: 45,
+    thickness: 70,
     shapeType: 'rect_board',
     holes: [
-      { x: 72, y: 35, d: 5 },
-      { x: 222, y: 35, d: 5 },
-      { x: 372, y: 35, d: 5 },
-      { x: 522, y: 35, d: 5 },
-      { x: 672, y: 35, d: 5 },
-      { x: 822, y: 35, d: 5 },
-      { x: 972, y: 35, d: 5 }
+      { x: 72, y: 22.5, d: 5 },
+      { x: 222, y: 22.5, d: 5 },
+      { x: 372, y: 22.5, d: 5 },
+      { x: 522, y: 22.5, d: 5 },
+      { x: 672, y: 22.5, d: 5 },
+      { x: 822, y: 22.5, d: 5 },
+      { x: 972, y: 22.5, d: 5 }
     ],
-    notes: '✅ Déjà montés sur vos 2 côtés (actuellement ~1204 mm) • 🪚 Recouper simplement le haut de -174 mm en place pour les ramener à 1030 mm (juste au-dessus de la 7ème lame P05).'
+    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord avant pour s’emboîter derrière P04) • 🪚 Recouper le haut de -174 mm (→ 1030 mm).'
   },
 
   P09: {
@@ -223,12 +223,12 @@ export const PARTS_CATALOG = {
     thickness: 10,
     shapeType: 'rect_board',
     holes: [
-      { x: 80, y: 40, d: 5 },
-      { x: 80, y: 260, d: 5 },
+      { x: 35, y: 40, d: 5 },
+      { x: 35, y: 260, d: 5 },
       { x: 950, y: 40, d: 5 },
       { x: 950, y: 260, d: 5 },
-      { x: 1820, y: 40, d: 5 },
-      { x: 1820, y: 260, d: 5 }
+      { x: 1865, y: 40, d: 5 },
+      { x: 1865, y: 260, d: 5 }
     ],
     notes: 'Placée aux Rangs 5-6 (Z=597.5..897.5 mm), encadrée entre la lame basse P03 #4 (Rang 4) et la lame haute P03 #5 (Rang 7) qui porte les charnières.'
   },
@@ -247,12 +247,12 @@ export const PARTS_CATALOG = {
     thickness: 10,
     shapeType: 'rect_board',
     holes: [
-      { x: 110, y: 74, d: 5 },
-      { x: 150, y: 74, d: 5 },
+      { x: 65, y: 74, d: 5 },
+      { x: 105, y: 74, d: 5 },
       { x: 980, y: 74, d: 5 },
       { x: 1020, y: 74, d: 5 },
-      { x: 1850, y: 74, d: 5 },
-      { x: 1890, y: 74, d: 5 }
+      { x: 1895, y: 74, d: 5 },
+      { x: 1935, y: 74, d: 5 }
     ],
     notes: 'Conserve la longueur 2000 mm (débords G/D de 23 mm) et 660 mm de rampant. 6 perçages Ø5 mm (Y=74 mm) alignés sur les 3 charnières Q01.'
   },
@@ -309,18 +309,18 @@ export const PARTS_CATALOG = {
     stockSource: '2ème Lambourde à racheter (70×45 mm)',
     stockStatus: 'to_buy',
     qty: 2,
-    length: 320,
-    spanY: 306,
-    width: 70,
-    thickness: 45,
+    length: 278,
+    spanY: 266,
+    width: 45,
+    thickness: 70,
     slopeDeg: 16.7,
     shapeType: 'sloped_brace',
     holes: [
-      { x: 30, y: 35, d: 5 },
-      { x: 160, y: 35, d: 5 },
-      { x: 290, y: 35, d: 5 }
+      { x: 30, y: 22.5, d: 5 },
+      { x: 139, y: 22.5, d: 5 },
+      { x: 248, y: 22.5, d: 5 }
     ],
-    notes: '🛒 Relie les faces internes des montants P08 (Z_haut=1030 mm) et P07 (Z_haut=1155 mm) avec coupes verticales d’aplomb (16.7°, entraxe 306 mm / rampant 320 mm) juste derrière la lame en pente P06.'
+    notes: '🛒 Fixée sur sa face de 45 mm (comme P07/P08, profondeur 70 mm) entre les faces internes de P08 (Y=-133, Z=1030) et P07 (Y=+133, Z=1155), entraxe 266 mm / rampant 278 mm, pour soutenir la lame en pente P06.'
   },
 
   Q01: {
@@ -541,13 +541,13 @@ export const STOCK_CUTLIST = {
       width: 70,
       thickness: 45,
       status: 'to_buy',
-      statusBadge: '🛒 À acheter #2 • Chute 1382 mm',
+      statusBadge: '🛒 À acheter #2 • Chute 1464 mm',
       cuts: [
-        { partId: 'P12', instanceLabel: 'P12 (Centre)', length: 370, startX: 0, bevel: '16.7°' },
-        { partId: 'P13', instanceLabel: 'P13 #1 (Côté G)', length: 320, startX: 374, bevel: '16.7°' },
-        { partId: 'P13', instanceLabel: 'P13 #2 (Côté D)', length: 320, startX: 698, bevel: '16.7°' }
+        { partId: 'P12', instanceLabel: 'P12 (Centre)', length: 372, startX: 0, bevel: '16.7°' },
+        { partId: 'P13', instanceLabel: 'P13 #1 (Côté G)', length: 278, startX: 376, bevel: '16.7°' },
+        { partId: 'P13', instanceLabel: 'P13 #2 (Côté D)', length: 278, startX: 658, bevel: '16.7°' }
       ],
-      offcut: 1382
+      offcut: 1464
     }
   ],
 
