@@ -255,7 +255,7 @@ const renderer = new THREE.WebGLRenderer({
   antialias: !isLiteMode, // OBLIGATOIRE sur Mali-T830 : pas de MSAA
   powerPreference: 'high-performance',
   alpha: false, // Évite le compositing transparent avec le DOM HTML derrière
-  stencil: !isLiteMode, // Économise la bande passante mémoire en mode Lite
+  stencil: true, // Permet d'afficher les tranches pleines lors d'une Coupe 3D (coût nul quand la coupe est inactive)
   depth: true
 });
 
