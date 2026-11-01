@@ -50,7 +50,7 @@ export const PARTS_CATALOG = {
     stockSource: '2 demi-lambourdes (~120,1 & 120,4 cm) + 1 lambourde entière (240 cm)',
     stockStatus: 'in_stock',
     qty: 3,
-    length: 1180,
+    length: 1160,
     width: 70,
     thickness: 45,
     shapeType: 'rect_board',
@@ -64,7 +64,7 @@ export const PARTS_CATALOG = {
       { x: 960.5, y: 35, d: 5 },
       { x: 1108.5, y: 35, d: 5 }
     ],
-    notes: 'P02 #1 et #2 : recouper vos 2 demi-lambourdes libres (120,1 et 120,4 cm) à 1180 mm • P02 #3 : couper 1180 mm dans votre lambourde entière (2400 mm) • Perçages calés sur le pas de 148 mm.'
+    notes: 'P02 #1 et #2 : recouper vos 2 demi-lambourdes libres (120,1 et 120,4 cm) à 1160 mm • P02 #3 : couper 1160 mm dans votre lambourde entière (2400 mm) • Hauteur 1160 mm calculée pour passer sans collision sous la pente du toit fermé.'
   },
 
   P03: {
@@ -172,7 +172,7 @@ export const PARTS_CATALOG = {
     stockSource: 'Lambourdes de 120,4 cm DÉJÀ MONTÉES à l’arrière des 2 côtés',
     stockStatus: 'in_stock',
     qty: 2,
-    length: 1155,
+    length: 1145,
     width: 45,
     thickness: 70,
     shapeType: 'rect_board',
@@ -186,7 +186,7 @@ export const PARTS_CATALOG = {
       { x: 960.5, y: 22.5, d: 5 },
       { x: 1100, y: 22.5, d: 5 }
     ],
-    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord arrière pour s’emboîter devant P02) • Lames au pas réel de 148 mm (joints 3 mm) • 🪚 Recouper le haut de -49 mm (→ 1155 mm).'
+    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord arrière pour s’emboîter devant P02) • Lames au pas réel de 148 mm (joints 3 mm) • 🪚 Recouper le haut de -59 mm (→ 1145 mm) pour s’aligner sans décrochement avec la traverse P13 sous le toit.'
   },
 
   P08: {
@@ -474,11 +474,11 @@ export const STOCK_CUTLIST = {
       width: 70,
       thickness: 45,
       status: 'trim_mounted',
-      statusBadge: '🪚 Recouper haut -49 mm',
+      statusBadge: '🪚 Recouper haut -59 mm',
       cuts: [
-        { partId: 'P07', instanceLabel: 'P07 #1 & #2 • Arrière Côtés G/D', length: 1155, startX: 0 }
+        { partId: 'P07', instanceLabel: 'P07 #1 & #2 • Arrière Côtés G/D', length: 1145, startX: 0 }
       ],
-      offcut: 49
+      offcut: 59
     },
     {
       stockId: 'LAMB-COTE-AV',
@@ -502,11 +502,11 @@ export const STOCK_CUTLIST = {
       width: 70,
       thickness: 45,
       status: 'to_cut',
-      statusBadge: '🪚 Recouper -21 / -24 mm',
+      statusBadge: '🪚 Recouper -41 / -44 mm',
       cuts: [
-        { partId: 'P02', instanceLabel: 'P02 #1 & #2 • Arrière G & Centre', length: 1180, startX: 0 }
+        { partId: 'P02', instanceLabel: 'P02 #1 & #2 • Arrière G & Centre', length: 1160, startX: 0 }
       ],
-      offcut: 24
+      offcut: 44
     },
     {
       stockId: 'LAMB-FULL-1',
@@ -516,12 +516,12 @@ export const STOCK_CUTLIST = {
       width: 70,
       thickness: 45,
       status: 'to_cut',
-      statusBadge: '🪚 À couper • Chute 186 mm',
+      statusBadge: '🪚 À couper • Chute 206 mm',
       cuts: [
-        { partId: 'P02', instanceLabel: 'P02 #3 • Arrière Droite', length: 1180, startX: 0 },
-        { partId: 'P04', instanceLabel: 'P04 #1 • Avant Gauche', length: 1030, startX: 1184 }
+        { partId: 'P02', instanceLabel: 'P02 #3 • Arrière Droite', length: 1160, startX: 0 },
+        { partId: 'P04', instanceLabel: 'P04 #1 • Avant Gauche', length: 1030, startX: 1164 }
       ],
-      offcut: 186
+      offcut: 206
     },
     {
       stockId: 'LAMB-ACHAT-1',

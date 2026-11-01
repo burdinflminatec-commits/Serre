@@ -397,14 +397,14 @@ export function buildSerreAssembly(materials, isLite = false) {
   geomP05.rotateY(Math.PI / 2);
 
   const geomP06 = createSlopedGableBoardGeometry(496, 145, 27, PARTS_CATALOG.P06.holes, isLite);
-  // Montants de côtés amovibles P07 (1155 mm) et P08 (1030 mm) :
+  // Montants de côtés amovibles P07 (1145 mm) et P08 (1030 mm) :
   // widthX = 70 mm (profondeur rentrante selon X_cad), thicknessY = 45 mm (face de 45 mm vissée contre P05 selon Y_cad)
-  const geomP07 = createBeveledPostGeometry(70, 45, 1155, 1155);
-  const geomP08 = createBeveledPostGeometry(70, 45, 1030, 1030);
+  const geomP07 = createBeveledPostGeometry(70, 45, PARTS_CATALOG.P07.length, PARTS_CATALOG.P07.length);
+  const geomP08 = createBeveledPostGeometry(70, 45, PARTS_CATALOG.P08.length, PARTS_CATALOG.P08.length);
 
   // Traverse inclinée P13 (entraxe 266 mm entre Y=-133 et Y=+133, 45 mm en Y/Z × 70 mm en X)
-  // reliant le sommet interne de P08 (Y=-133, Z=1030) au sommet interne de P07 (Y=+133, Z=1155)
-  const geomP13 = createSlopedBraceGeometry(266, 45, 70, 1030, 1155);
+  // calée sur la pente exacte du toit (16.5°), reliant sans aucun décrochement le haut avant (Z=1066) au sommet de P07 (Z=1145) sous P06
+  const geomP13 = createSlopedBraceGeometry(266, 45, 70, 1066, 1145);
 
   const sidesConfig = [
     {
