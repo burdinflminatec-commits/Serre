@@ -394,214 +394,155 @@ export const STOCK_CUTLIST = {
     // --- A. LES 2 LAMES ENTIÈRES (2400 mm) EN STOCK À DÉBITER ---
     {
       stockId: 'LAME-FULL-1',
-      label: '1ère Lame Entière en stock (240 cm — À COUPER)',
+      qtyLabel: '×1',
+      label: '1ère Lame entière en stock (2400 mm)',
       length: 2400,
       width: 145,
       thickness: 27,
       status: 'to_cut',
-      statusBadge: '🪚 En stock (240 cm entière) — À couper • Chute : 0 mm',
+      statusBadge: '🪚 À couper • 0 chute',
       cuts: [
-        { partId: 'P03', instanceLabel: 'P03 #5 (5ème lame Façade Avant R5)', length: 1900, startX: 0 },
-        { partId: 'P05', instanceLabel: 'P05 #7 (7ème lame Côté G R7)', length: 496, startX: 1904 }
+        { partId: 'P03', instanceLabel: 'P03 #5 • Avant R5', length: 1900, startX: 0 },
+        { partId: 'P05', instanceLabel: 'P05 #7 • Côté G R7', length: 496, startX: 1904 }
       ],
       offcut: 0
     },
     {
       stockId: 'LAME-FULL-2',
-      label: '2ème Lame Entière en stock (240 cm — À COUPER)',
+      qtyLabel: '×1',
+      label: '2ème Lame entière en stock (2400 mm)',
       length: 2400,
       width: 145,
       thickness: 27,
       status: 'to_cut',
-      statusBadge: '🪚 En stock (240 cm entière) — À couper • Chute : 510 mm',
+      statusBadge: '🪚 À couper • Chute 510 mm',
       cuts: [
-        { partId: 'P05', instanceLabel: 'P05 #14 (7ème lame Côté D R7)', length: 496, startX: 0 },
-        { partId: 'P06', instanceLabel: 'P06 #1 + #2 (2 Pignons tête-bêche)', length: 496, startX: 500, diagonalGable: true },
-        { partId: 'P11', instanceLabel: 'P11 ×2 (Déligné 2×68mm)', length: 890, startX: 1000, ripInTwo: true }
+        { partId: 'P05', instanceLabel: 'P05 #14 • Côté D R7', length: 496, startX: 0 },
+        { partId: 'P06', instanceLabel: 'P06 #1 & #2', length: 496, startX: 500, diagonalGable: true },
+        { partId: 'P11', instanceLabel: 'P11 #1 & #2 (2×68 mm)', length: 890, startX: 1000, ripInTwo: true }
       ],
       offcut: 510
     },
-    // --- B. LES 12 LAMES DÉJÀ COUPÉES (12 × 190 cm + 12 × 49,6 cm montées sur les 2 côtés) ---
-    ...Array.from({ length: 6 }, (_, idx) => {
-      const num = idx + 1;
-      return {
-        stockId: `LAME-${String(num).padStart(2, '0')}`,
-        label: `Lame #${num} — 190 cm en stock + 49,6 cm déjà monté Côté Gauche (R${num})`,
-        length: 2400,
-        width: 145,
-        thickness: 27,
-        status: 'already_cut',
-        statusBadge: '✅ Déjà coupé (190 cm libre + 49,6 cm monté Côté G)',
-        cuts: [
-          { partId: 'P01', instanceLabel: `P01 #${num} (Arrière R${num} — 190 cm prêt)`, length: 1900, startX: 0 },
-          { partId: 'P05', instanceLabel: `P05 #${num} (Monté Côté G R${num})`, length: 496, startX: 1904 }
-        ],
-        offcut: 0
-      };
-    }),
-    ...Array.from({ length: 2 }, (_, idx) => {
-      const num = idx + 7;
-      const sideRow = idx + 1;
-      return {
-        stockId: `LAME-${String(num).padStart(2, '0')}`,
-        label: `Lame #${num} — 190 cm en stock + 49,6 cm déjà monté Côté Droit (R${sideRow})`,
-        length: 2400,
-        width: 145,
-        thickness: 27,
-        status: 'already_cut',
-        statusBadge: '✅ Déjà coupé (190 cm libre + 49,6 cm monté Côté D)',
-        cuts: [
-          { partId: 'P01', instanceLabel: `P01 #${num} (Arrière R${num} — 190 cm prêt)`, length: 1900, startX: 0 },
-          { partId: 'P05', instanceLabel: `P05 #${num + 1} (Monté Côté D R${sideRow})`, length: 496, startX: 1904 }
-        ],
-        offcut: 0
-      };
-    }),
-    ...Array.from({ length: 4 }, (_, idx) => {
-      const num = idx + 9;
-      const fIdx = idx + 1;
-      const sideRow = idx + 3;
-      return {
-        stockId: `LAME-${String(num).padStart(2, '0')}`,
-        label: `Lame #${num} — 190 cm en stock + 49,6 cm déjà monté Côté Droit (R${sideRow})`,
-        length: 2400,
-        width: 145,
-        thickness: 27,
-        status: 'already_cut',
-        statusBadge: '✅ Déjà coupé (190 cm libre + 49,6 cm monté Côté D)',
-        cuts: [
-          { partId: 'P03', instanceLabel: `P03 #${fIdx} (Avant R${fIdx} — 190 cm prêt)`, length: 1900, startX: 0 },
-          { partId: 'P05', instanceLabel: `P05 #${num + 1} (Monté Côté D R${sideRow})`, length: 496, startX: 1904 }
-        ],
-        offcut: 0
-      };
-    })
+    // --- B. LES 12 LAMES DÉJÀ COUPÉES / MONTÉES (Regroupées en 2 lots : ×8 et ×4) ---
+    {
+      stockId: 'LAMES-01-08',
+      qtyLabel: '×8',
+      label: 'Lot 8 lames déjà débitées (Façade Arrière + Côtés R1-R6)',
+      length: 2400,
+      width: 145,
+      thickness: 27,
+      status: 'already_cut',
+      statusBadge: '✅ Déjà coupé & monté',
+      cuts: [
+        { partId: 'P01', instanceLabel: '8 × P01 (Arrière R1-R8 — 190 cm en stock)', length: 1900, startX: 0 },
+        { partId: 'P05', instanceLabel: '8 × P05 (Montées Côtés)', length: 496, startX: 1904 }
+      ],
+      offcut: 0
+    },
+    {
+      stockId: 'LAMES-09-12',
+      qtyLabel: '×4',
+      label: 'Lot 4 lames déjà débitées (Façade Avant R1-R4 + Côtés R1-R6)',
+      length: 2400,
+      width: 145,
+      thickness: 27,
+      status: 'already_cut',
+      statusBadge: '✅ Déjà coupé & monté',
+      cuts: [
+        { partId: 'P03', instanceLabel: '4 × P03 (Avant R1-R4 — 190 cm en stock)', length: 1900, startX: 0 },
+        { partId: 'P05', instanceLabel: '4 × P05 (Montées Côtés)', length: 496, startX: 1904 }
+      ],
+      offcut: 0
+    }
   ],
 
-  // 2. LAMBOURDES 70 × 45 mm (Inventaire réel : 4 montées de ~120,4 cm + 2 libres de 120,1 & 120,4 cm + 1 entière 240 cm + 2 à racheter)
+  // 2. LAMBOURDES 70 × 45 mm
   lambourdes: [
-    // --- A. LES 4 LAMBOURDES DE ~120,4 cm DÉJÀ MONTÉES SUR LES 2 CÔTÉS (À RECOUPER EN HAUT SUR PLACE) ---
     {
-      stockId: 'LAMB-COTE-G-ARR',
-      label: 'Montant Arrière Côté Gauche (Déjà monté : ~120,4 cm)',
+      stockId: 'LAMB-COTE-ARR',
+      qtyLabel: '×2',
+      label: 'Montants Arrière Côtés G & D (déjà montés : 1204 mm)',
       length: 1204,
       width: 70,
       thickness: 45,
       status: 'trim_mounted',
-      statusBadge: '🪚 Déjà monté sur Côté G — Recouper le haut de -49 mm (→ 1155 mm)',
+      statusBadge: '🪚 Recouper haut -49 mm',
       cuts: [
-        { partId: 'P07', instanceLabel: 'P07 #1 (Côté G Arrière — 1155 mm)', length: 1155, startX: 0 }
+        { partId: 'P07', instanceLabel: 'P07 #1 & #2 • Arrière Côtés G/D', length: 1155, startX: 0 }
       ],
       offcut: 49
     },
     {
-      stockId: 'LAMB-COTE-D-ARR',
-      label: 'Montant Arrière Côté Droit (Déjà monté : ~120,4 cm)',
+      stockId: 'LAMB-COTE-AV',
+      qtyLabel: '×2',
+      label: 'Montants Avant Côtés G & D (déjà montés : 1204 mm)',
       length: 1204,
       width: 70,
       thickness: 45,
       status: 'trim_mounted',
-      statusBadge: '🪚 Déjà monté sur Côté D — Recouper le haut de -49 mm (→ 1155 mm)',
+      statusBadge: '🪚 Recouper haut -174 mm',
       cuts: [
-        { partId: 'P07', instanceLabel: 'P07 #2 (Côté D Arrière — 1155 mm)', length: 1155, startX: 0 }
-      ],
-      offcut: 49
-    },
-    {
-      stockId: 'LAMB-COTE-G-AV',
-      label: 'Montant Avant Côté Gauche (Déjà monté : ~120,4 cm)',
-      length: 1204,
-      width: 70,
-      thickness: 45,
-      status: 'trim_mounted',
-      statusBadge: '🪚 Déjà monté sur Côté G — Recouper le haut de -174 mm (→ 1030 mm)',
-      cuts: [
-        { partId: 'P08', instanceLabel: 'P08 #1 (Côté G Avant — 1030 mm)', length: 1030, startX: 0 }
+        { partId: 'P08', instanceLabel: 'P08 #1 & #2 • Avant Côtés G/D', length: 1030, startX: 0 }
       ],
       offcut: 174
     },
     {
-      stockId: 'LAMB-COTE-D-AV',
-      label: 'Montant Avant Côté Droit (Déjà monté : ~120,4 cm)',
-      length: 1204,
-      width: 70,
-      thickness: 45,
-      status: 'trim_mounted',
-      statusBadge: '🪚 Déjà monté sur Côté D — Recouper le haut de -174 mm (→ 1030 mm)',
-      cuts: [
-        { partId: 'P08', instanceLabel: 'P08 #2 (Côté D Avant — 1030 mm)', length: 1030, startX: 0 }
-      ],
-      offcut: 174
-    },
-    // --- B. LES 2 DEMI-LAMBOURDES LIBRES EN STOCK (120,1 cm et 120,4 cm) ---
-    {
-      stockId: 'LAMB-120-A',
-      label: 'Demi-Lambourde libre #1 en stock (120,1 cm = 1201 mm)',
-      length: 1201,
-      width: 70,
-      thickness: 45,
-      status: 'to_cut',
-      statusBadge: '🪚 En stock libre (120,1 cm) — Recouper -21 mm (→ 1180 mm)',
-      cuts: [
-        { partId: 'P02', instanceLabel: 'P02 #1 (Montant Arrière Gauche — 1180 mm)', length: 1180, startX: 0 }
-      ],
-      offcut: 21
-    },
-    {
-      stockId: 'LAMB-120-B',
-      label: 'Demi-Lambourde libre #2 en stock (120,4 cm = 1204 mm)',
+      stockId: 'LAMB-120-STOCK',
+      qtyLabel: '×2',
+      label: 'Demi-lambourdes libres en stock (1201 et 1204 mm)',
       length: 1204,
       width: 70,
       thickness: 45,
       status: 'to_cut',
-      statusBadge: '🪚 En stock libre (120,4 cm) — Recouper -24 mm (→ 1180 mm)',
+      statusBadge: '🪚 Recouper -21 / -24 mm',
       cuts: [
-        { partId: 'P02', instanceLabel: 'P02 #2 (Montant Arrière Centre — 1180 mm)', length: 1180, startX: 0 }
+        { partId: 'P02', instanceLabel: 'P02 #1 & #2 • Arrière G & Centre', length: 1180, startX: 0 }
       ],
       offcut: 24
     },
-    // --- C. LA LAMBOURDE ENTIÈRE EN STOCK (2400 mm) ---
     {
       stockId: 'LAMB-FULL-1',
-      label: 'Lambourde Entière en stock (240 cm = 2400 mm)',
+      qtyLabel: '×1',
+      label: 'Lambourde entière en stock (2400 mm)',
       length: 2400,
       width: 70,
       thickness: 45,
       status: 'to_cut',
-      statusBadge: '🪚 En stock (240 cm entière) — À couper • Chute : 171 mm',
+      statusBadge: '🪚 À couper • Chute 171 mm',
       cuts: [
-        { partId: 'P02', instanceLabel: 'P02 #3 (Arrière Droite)', length: 1180, startX: 0 },
-        { partId: 'P04', instanceLabel: 'P04 #1 (Avant Gauche)', length: 1045, startX: 1184 }
+        { partId: 'P02', instanceLabel: 'P02 #3 • Arrière Droite', length: 1180, startX: 0 },
+        { partId: 'P04', instanceLabel: 'P04 #1 • Avant Gauche', length: 1045, startX: 1184 }
       ],
       offcut: 171
     },
-    // --- D. LES 2 LAMBOURDES ENTIÈRES À RACHETER (2 × 2400 mm) ---
     {
       stockId: 'LAMB-ACHAT-1',
-      label: 'Lambourde à racheter #1 (Pin Cl.4 2400 × 70 × 45 mm)',
+      qtyLabel: '×1',
+      label: 'Lambourde à racheter #1 (2400 mm)',
       length: 2400,
       width: 70,
       thickness: 45,
       status: 'to_buy',
-      statusBadge: '🛒 À racheter (#1/2) • Chute : 306 mm',
+      statusBadge: '🛒 À acheter #1 • Chute 306 mm',
       cuts: [
-        { partId: 'P04', instanceLabel: 'P04 #2 (Avant Centre)', length: 1045, startX: 0 },
-        { partId: 'P04', instanceLabel: 'P04 #3 (Avant Droite)', length: 1045, startX: 1049 }
+        { partId: 'P04', instanceLabel: 'P04 #2 • Avant Centre', length: 1045, startX: 0 },
+        { partId: 'P04', instanceLabel: 'P04 #3 • Avant Droite', length: 1045, startX: 1049 }
       ],
       offcut: 306
     },
     {
       stockId: 'LAMB-ACHAT-2',
-      label: 'Lambourde à racheter #2 (Pin Cl.4 2400 × 70 × 45 mm)',
+      qtyLabel: '×1',
+      label: 'Lambourde à racheter #2 (2400 mm)',
       length: 2400,
       width: 70,
       thickness: 45,
       status: 'to_buy',
-      statusBadge: '🛒 À racheter (#2/2) • Chute : 1382 mm',
+      statusBadge: '🛒 À acheter #2 • Chute 1382 mm',
       cuts: [
-        { partId: 'P12', instanceLabel: 'P12 #1 (Portique Central X=0)', length: 370, startX: 0, bevel: '16.7°' },
-        { partId: 'P13', instanceLabel: 'P13 #1 (Support P06 Côté G)', length: 320, startX: 374, bevel: '16.7°' },
-        { partId: 'P13', instanceLabel: 'P13 #2 (Support P06 Côté D)', length: 320, startX: 698, bevel: '16.7°' }
+        { partId: 'P12', instanceLabel: 'P12 (Centre)', length: 370, startX: 0, bevel: '16.7°' },
+        { partId: 'P13', instanceLabel: 'P13 #1 (Côté G)', length: 320, startX: 374, bevel: '16.7°' },
+        { partId: 'P13', instanceLabel: 'P13 #2 (Côté D)', length: 320, startX: 698, bevel: '16.7°' }
       ],
       offcut: 1382
     }
