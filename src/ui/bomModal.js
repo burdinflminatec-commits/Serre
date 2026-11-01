@@ -1,4 +1,4 @@
-import { PARTS_CATALOG } from '../data/serreData.js';
+import { PARTS_CATALOG, BACK_TOP_Z } from '../data/serreData.js';
 
 /**
  * Rendu de la modale Nomenclature & Fiche Technique avec bouton "📐 Voir 2D"
@@ -57,7 +57,7 @@ export function renderBomModal(modalBodyEl, onViewPart2D) {
       </div>
       <div class="summary-card">
         <div class="lbl">Dimensions Hors-Tout</div>
-        <div class="val">1900 × 500 × 1195 mm</div>
+        <div class="val">1900 × 500 × ${BACK_TOP_Z} mm</div>
       </div>
       <div class="summary-card">
         <div class="lbl">Visserie Inox A2 5×60 mm</div>

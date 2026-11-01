@@ -3,8 +3,13 @@
 // Repère Métier : X = Largeur (1900), Y = Profondeur (500), Z = Hauteur (1195)
 // ============================================================================
 
-export const ROOF_SLOPE_DEG = 16.7; // arctan(150 / 500) = 16.699°
-export const ROOF_SLOPE_RAD = (ROOF_SLOPE_DEG * Math.PI) / 180;
+// Pas des lames mesuré au mètre sur les côtés : 6 lames = 885 mm => 6 × 145 + 5 joints de 3 mm => pas de 148 mm
+// Appliqué partout (façades avant/arrière + côtés) pour que toutes les lames s'alignent.
+export const SLAT_PITCH = 148;
+export const FRONT_TOP_Z = 6 * SLAT_PITCH + 145; // 1033 mm (haut de la 7ème lame avant)
+export const BACK_TOP_Z = 7 * SLAT_PITCH + 145; // 1181 mm (haut de la 8ème lame arrière)
+export const ROOF_SLOPE_RAD = Math.atan((BACK_TOP_Z - FRONT_TOP_Z) / 500); // arctan(148 / 500) = 16.49°
+export const ROOF_SLOPE_DEG = (ROOF_SLOPE_RAD * 180) / Math.PI;
 export const SAW_KERF = 4; // Trait de scie en mm
 
 /**
@@ -50,16 +55,16 @@ export const PARTS_CATALOG = {
     thickness: 45,
     shapeType: 'rect_board',
     holes: [
-      { x: 72, y: 35, d: 5 },
-      { x: 222, y: 35, d: 5 },
-      { x: 372, y: 35, d: 5 },
-      { x: 522, y: 35, d: 5 },
-      { x: 672, y: 35, d: 5 },
-      { x: 822, y: 35, d: 5 },
-      { x: 972, y: 35, d: 5 },
-      { x: 1122, y: 35, d: 5 }
+      { x: 72.5, y: 35, d: 5 },
+      { x: 220.5, y: 35, d: 5 },
+      { x: 368.5, y: 35, d: 5 },
+      { x: 516.5, y: 35, d: 5 },
+      { x: 664.5, y: 35, d: 5 },
+      { x: 812.5, y: 35, d: 5 },
+      { x: 960.5, y: 35, d: 5 },
+      { x: 1108.5, y: 35, d: 5 }
     ],
-    notes: 'P02 #1 et #2 : recouper vos 2 demi-lambourdes libres (120,1 et 120,4 cm) à 1180 mm • P02 #3 : couper 1180 mm dans votre lambourde entière (2400 mm).'
+    notes: 'P02 #1 et #2 : recouper vos 2 demi-lambourdes libres (120,1 et 120,4 cm) à 1180 mm • P02 #3 : couper 1180 mm dans votre lambourde entière (2400 mm) • Perçages calés sur le pas de 148 mm.'
   },
 
   P03: {
@@ -83,7 +88,7 @@ export const PARTS_CATALOG = {
       { x: 1865, y: 35, d: 5 },
       { x: 1865, y: 110, d: 5 }
     ],
-    notes: '✅ P03 #1 à #4 (Rangs 1 à 4, déjà coupées) en bas • 🪚 P03 #5 (à couper dans la 1ère lame entière) placée tout en HAUT (Rang 7, Z=900..1045 mm) pour encadrer la fenêtre P09 et porter les 3 charnières Q01.'
+    notes: '✅ P03 #1 à #4 (Rangs 1 à 4, déjà coupées) en bas • 🪚 P03 #5 (à couper dans la 1ère lame entière) placée tout en HAUT (Rang 7, Z=888..1033 mm, pas 148 mm) pour encadrer la fenêtre P09 et porter les 3 charnières Q01.'
   },
 
   P04: {
@@ -95,21 +100,21 @@ export const PARTS_CATALOG = {
     stockSource: 'P04 #1 : chute Lambourde entière (1216 mm) • P04 #2 & #3 : Lambourde à racheter',
     stockStatus: 'to_buy',
     qty: 3,
-    length: 1045,
+    length: 1030,
     width: 70,
     thickness: 45,
     shapeType: 'rect_board',
     holes: [
-      { x: 72, y: 35, d: 5 },
-      { x: 222, y: 35, d: 5 },
-      { x: 372, y: 35, d: 5 },
-      { x: 522, y: 35, d: 5 },
+      { x: 72.5, y: 35, d: 5 },
+      { x: 220.5, y: 35, d: 5 },
+      { x: 368.5, y: 35, d: 5 },
+      { x: 516.5, y: 35, d: 5 },
       { x: 635, y: 35, d: 5 },
-      { x: 860, y: 35, d: 5 },
-      { x: 935, y: 35, d: 5 },
-      { x: 1010, y: 35, d: 5 }
+      { x: 840, y: 35, d: 5 },
+      { x: 960.5, y: 35, d: 5 },
+      { x: 1005, y: 35, d: 5 }
     ],
-    notes: '🪚 P04 #1 (1045 mm) pris dans le reste (1216 mm) de votre lambourde entière après P02 #3 • 🛒 P04 #2 et #3 (2 × 1045 mm) pris dans la 1ère lambourde à racheter.'
+    notes: '🪚 P04 #1 (1030 mm) pris dans la lambourde entière après P02 #3 • 🛒 P04 #2 et #3 (2 × 1030 mm) pris dans la 1ère lambourde à racheter • Perçages calés sur le pas de 148 mm.'
   },
 
   P05: {
@@ -219,18 +224,18 @@ export const PARTS_CATALOG = {
     stockStatus: 'in_stock',
     qty: 1,
     length: 1900,
-    width: 300,
+    width: 293,
     thickness: 10,
     shapeType: 'rect_board',
     holes: [
-      { x: 35, y: 40, d: 5 },
-      { x: 35, y: 260, d: 5 },
-      { x: 950, y: 40, d: 5 },
-      { x: 950, y: 260, d: 5 },
-      { x: 1865, y: 40, d: 5 },
-      { x: 1865, y: 260, d: 5 }
+      { x: 35, y: 43, d: 5 },
+      { x: 35, y: 248, d: 5 },
+      { x: 950, y: 43, d: 5 },
+      { x: 950, y: 248, d: 5 },
+      { x: 1865, y: 43, d: 5 },
+      { x: 1865, y: 248, d: 5 }
     ],
-    notes: 'Placée aux Rangs 5-6 (Z=597.5..897.5 mm), encadrée entre la lame basse P03 #4 (Rang 4) et la lame haute P03 #5 (Rang 7) qui porte les charnières.'
+    notes: 'Placée aux Rangs 5-6 (Z=592..885 mm), parfaitement alignée avec les lames R5-R6 des côtés (hauteur 885 mm mesurée), encadrée entre la lame basse P03 #4 (Rang 4) et la lame haute P03 #5 (Rang 7).'
   },
 
   P10: {
@@ -291,13 +296,13 @@ export const PARTS_CATALOG = {
     spanY: 356,
     width: 70,
     thickness: 45,
-    slopeDeg: 16.7,
+    slopeDeg: 16.5,
     shapeType: 'sloped_brace',
     holes: [
       { x: 25, y: 35, d: 5 },
       { x: 347, y: 35, d: 5 }
     ],
-    notes: '🛒 Traverse centrale (X=0, entraxe horizontal 356 mm / longueur rampante 372 mm) avec coupes verticales d’aplomb (16.7°) plaquées sans jeu contre P04 #2 (Z_haut=1038) et P02 #2 (Z_haut=1145).'
+    notes: '🛒 Traverse centrale (X=0, entraxe horizontal 356 mm / longueur rampante 372 mm) avec coupes verticales d’aplomb (16.5°) plaquées sans jeu contre P04 #2 (Z_haut=1030) et P02 #2 (Z_haut=1180).'
   },
 
   P13: {
@@ -313,14 +318,14 @@ export const PARTS_CATALOG = {
     spanY: 266,
     width: 45,
     thickness: 70,
-    slopeDeg: 16.7,
+    slopeDeg: 16.5,
     shapeType: 'sloped_brace',
     holes: [
       { x: 30, y: 22.5, d: 5 },
       { x: 139, y: 22.5, d: 5 },
       { x: 248, y: 22.5, d: 5 }
     ],
-    notes: '🛒 Fixée sur sa face de 45 mm (comme P07/P08, profondeur 70 mm) entre les faces internes de P08 (Y=-133, Z=1030) et P07 (Y=+133, Z=1155), entraxe 266 mm / rampant 278 mm, pour soutenir la lame en pente P06.'
+    notes: '🛒 Fixée sur sa face de 45 mm (comme P07/P08, profondeur 70 mm) entre les faces internes de P08 (Y=-133, Z=1030) et P07 (Y=+133, Z=1155), entraxe 266 mm / rampant 278 mm (pente 16.5°), pour soutenir la lame en pente P06.'
   },
 
   Q01: {
@@ -342,7 +347,7 @@ export const PARTS_CATALOG = {
       { x: 20, y: 45, d: 5 },
       { x: 60, y: 45, d: 5 }
     ],
-    notes: 'Charnon fixe (80×30 mm) vissé verticalement en haut de la 5ème lame avant P03 #5 (Rang 7, Z=1015..1045) • Gond Ø8 mm sur l’arête haute (Y=-248, Z=1046.5) • Charnon mobile boulonné sous le toit P10.'
+    notes: 'Charnon fixe (80×30 mm) vissé verticalement en haut de la 5ème lame avant P03 #5 (Rang 7, Z=1000..1033) • Gond Ø8 mm sur l’arête haute (Y=-248, Z=1035) • Charnon mobile boulonné sous le toit P10.'
   },
 
   Q02: {
@@ -511,12 +516,12 @@ export const STOCK_CUTLIST = {
       width: 70,
       thickness: 45,
       status: 'to_cut',
-      statusBadge: '🪚 À couper • Chute 171 mm',
+      statusBadge: '🪚 À couper • Chute 186 mm',
       cuts: [
         { partId: 'P02', instanceLabel: 'P02 #3 • Arrière Droite', length: 1180, startX: 0 },
-        { partId: 'P04', instanceLabel: 'P04 #1 • Avant Gauche', length: 1045, startX: 1184 }
+        { partId: 'P04', instanceLabel: 'P04 #1 • Avant Gauche', length: 1030, startX: 1184 }
       ],
-      offcut: 171
+      offcut: 186
     },
     {
       stockId: 'LAMB-ACHAT-1',
@@ -526,12 +531,12 @@ export const STOCK_CUTLIST = {
       width: 70,
       thickness: 45,
       status: 'to_buy',
-      statusBadge: '🛒 À acheter #1 • Chute 306 mm',
+      statusBadge: '🛒 À acheter #1 • Chute 336 mm',
       cuts: [
-        { partId: 'P04', instanceLabel: 'P04 #2 • Avant Centre', length: 1045, startX: 0 },
-        { partId: 'P04', instanceLabel: 'P04 #3 • Avant Droite', length: 1045, startX: 1049 }
+        { partId: 'P04', instanceLabel: 'P04 #2 • Avant Centre', length: 1030, startX: 0 },
+        { partId: 'P04', instanceLabel: 'P04 #3 • Avant Droite', length: 1030, startX: 1034 }
       ],
-      offcut: 306
+      offcut: 336
     },
     {
       stockId: 'LAMB-ACHAT-2',
@@ -543,9 +548,9 @@ export const STOCK_CUTLIST = {
       status: 'to_buy',
       statusBadge: '🛒 À acheter #2 • Chute 1464 mm',
       cuts: [
-        { partId: 'P12', instanceLabel: 'P12 (Centre)', length: 372, startX: 0, bevel: '16.7°' },
-        { partId: 'P13', instanceLabel: 'P13 #1 (Côté G)', length: 278, startX: 376, bevel: '16.7°' },
-        { partId: 'P13', instanceLabel: 'P13 #2 (Côté D)', length: 278, startX: 658, bevel: '16.7°' }
+        { partId: 'P12', instanceLabel: 'P12 (Centre)', length: 372, startX: 0, bevel: '16.5°' },
+        { partId: 'P13', instanceLabel: 'P13 #1 (Côté G)', length: 278, startX: 376, bevel: '16.5°' },
+        { partId: 'P13', instanceLabel: 'P13 #2 (Côté D)', length: 278, startX: 658, bevel: '16.5°' }
       ],
       offcut: 1464
     }
@@ -570,11 +575,11 @@ export const STOCK_CUTLIST = {
       },
       {
         partId: 'P09',
-        instanceLabel: 'P09 — Fenêtre Façade Avant (1900 × 300 mm)',
+        instanceLabel: 'P09 — Fenêtre Façade Avant (1900 × 293 mm)',
         x: 0,
         y: 664,
         w: 1900,
-        h: 300
+        h: 293
       }
     ]
   }

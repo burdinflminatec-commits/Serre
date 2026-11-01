@@ -325,7 +325,7 @@ function renderPolycarbonate2D(sheet, highlightedPartId, isPrint = false) {
           <span class="board-qty-tag">×1</span>
           <strong>${sheet.label}</strong>
         </div>
-        <span class="stock-pill">✅ Rendement 95% • Chute 100×300 mm</span>
+        <span class="stock-pill">✅ Rendement 95% • Chute 100×293 mm</span>
       </div>
       <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" height="${svgH}" xmlns="http://www.w3.org/2000/svg">
         <rect x="${padL}" y="${padT}" width="${drawW}" height="${drawH}" fill="${isPrint ? '#fff' : '#0b1017'}" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3" />
@@ -335,11 +335,11 @@ function renderPolycarbonate2D(sheet, highlightedPartId, isPrint = false) {
         <text x="${padL - 6}" y="${cutY660 + 3}" text-anchor="end" fill="#f87171" font-family="monospace" font-size="9.5" font-weight="bold">Y=660</text>
         <text x="${padL - 6}" y="${padT + 8}" text-anchor="end" fill="#94a3b8" font-family="monospace" font-size="9">0</text>
         <text x="${padL - 6}" y="${padT + drawH}" text-anchor="end" fill="#94a3b8" font-family="monospace" font-size="9">980</text>
-        <!-- Trait de recoupe à X = 1900 mm et Chute 100 × 300 mm -->
+        <!-- Trait de recoupe à X = 1900 mm et Chute 100 × 293 mm -->
         <line x1="${cutX1900}" y1="${p09TopY}" x2="${cutX1900}" y2="${p09BotY}" stroke="#ef4444" stroke-width="2" stroke-dasharray="4 2" />
         <text x="${cutX1900}" y="${p09BotY + 14}" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9.5" font-weight="bold">X=1900</text>
         <text x="${padL + drawW}" y="${p09BotY + 14}" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="9">2000</text>
-        <text x="${(cutX1900 + padL + drawW) / 2}" y="${(p09TopY + p09BotY) / 2 + 3}" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="8.5">Chute 100×300</text>
+        <text x="${(cutX1900 + padL + drawW) / 2}" y="${(p09TopY + p09BotY) / 2 + 3}" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="8.5">Chute 100×293</text>
       </svg>
     </div>
   `;
@@ -372,7 +372,7 @@ function renderPrintableSheet(printSheetEl) {
     <div class="print-header">
       <div>
         <h1>FICHE DE DÉBIT ATELIER — SERRE BOIS &amp; POLYCARBONATE (1900 × 500 mm)</h1>
-        <div>Hauteur Arrière : 1195 mm (8 lames) • Hauteur Avant : 1045 mm (5 lames + vitrage 300 mm) • Espacement lames : 5 mm • Pente : 16.7°</div>
+        <div>Hauteur Arrière : 1181 mm (8 lames) • Hauteur Avant : 1033 mm (5 lames + vitrage 293 mm) • Espacement lames : 3 mm (pas 148 mm) • Pente : 16.5°</div>
       </div>
       <div style="text-align:right;font-family:monospace;font-size:9.5pt;">
         Trait de scie : 4 mm<br/>

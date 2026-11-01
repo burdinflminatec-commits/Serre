@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PARTS_CATALOG, ROOF_SLOPE_DEG, ROOF_SLOPE_RAD } from '../data/serreData.js';
+import { PARTS_CATALOG, ROOF_SLOPE_DEG, ROOF_SLOPE_RAD, SLAT_PITCH, FRONT_TOP_Z, BACK_TOP_Z } from '../data/serreData.js';
 
 /**
  * Conversion Repère Métier CAD (X=Largeur, Y=Profondeur, Z=Hauteur)
@@ -240,12 +240,21 @@ export function buildSerreAssembly(materials, isLite = false) {
 
   Object.values(groups).forEach((g) => rootGroup.add(g));
 
+  // Axe des 3 charnières Q01 : 5 mm au-dessus de l'arête haute de la 7ème lame avant P03 #5 (Z = 1033 mm)
+  // => la sous-face du toit P10 vient se poser pile sur l'arête intérieure haute de la 8ème lame arrière (Y=+223, Z=1181)
+  const HINGE_Y_CAD = -248;
+  const HINGE_Z_CAD = FRONT_TOP_Z + 5; // 1038 mm
+  const TAN_S = Math.tan(ROOF_SLOPE_RAD);
+  const COS_S = Math.cos(ROOF_SLOPE_RAD);
+  // Altitude Z de la sous-face des lattes P11 (27 mm sous P10) à la profondeur Y_cad (toit fermé)
+  const latteUndersideZ = (yCad) => HINGE_Z_CAD - 23.5 / COS_S + (yCad - HINGE_Y_CAD) * TAN_S;
+
   // ==========================================================================
-  // 1. FAÇADE ARRIÈRE : 8 Lames P01 (1900×145×27) + 3 Montants P02 (70×45)
+  // 1. FAÇADE ARRIÈRE : 8 Lames P01 (1900×145×27, pas 148 mm) + 3 Montants P02 (70×45)
   // ==========================================================================
   const geomP01 = createExtrudedBoardGeometry(1900, 145, 27, PARTS_CATALOG.P01.holes, isLite);
   for (let r = 0; r < 8; r++) {
-    const zBottom = r * 150;
+    const zBottom = r * SLAT_PITCH;
     const zCenter = zBottom + 145 / 2;
     const yCenter = 250 - 27 / 2; // Y_cad = +236.5 mm
 
@@ -269,8 +278,9 @@ export function buildSerreAssembly(materials, isLite = false) {
     groups.backWall.add(mesh);
   }
 
-  // 3 Montants Arrière P02 — Coupe droite à 90° (hauteur = 1180 mm, 70 mm selon X × 45 mm selon Y)
-  const geomP02 = createBeveledPostGeometry(70, 45, 1180, 1180);
+  // 3 Montants Arrière P02 — Coupe droite à 90° (70 mm selon X × 45 mm selon Y)
+  // Hauteur = sous-face du toit P10 sur leur face intérieure (Y=+178) - ~3 mm de jeu
+  const geomP02 = createBeveledPostGeometry(70, 45, PARTS_CATALOG.P02.length, PARTS_CATALOG.P02.length);
   const backPostX = [-915, 0, +915];
   backPostX.forEach((xCad, idx) => {
     const mesh = buildPartMesh({
@@ -291,8 +301,8 @@ export function buildSerreAssembly(materials, isLite = false) {
   });
 
   // Unique Traverse Haute Centrale P12 (entraxe 356 mm, section 70 × 45 mm à X=0) reliant P04 #2 (Y=-178) et P02 #2 (Y=+178)
-  // Coupes d'aplomb verticales aux 2 extrémités (sans collision dans P04/P02) et plaquée sous les traverses P11 (Z_top = 1038 -> 1144.8 mm)
-  const geomP12 = createSlopedBraceGeometry(356, 70, 45, 1038, 1144.8);
+  // Coupes d'aplomb verticales aux 2 extrémités, dessus parallèle au toit 5 mm sous les lattes P11
+  const geomP12 = createSlopedBraceGeometry(356, 70, 45, latteUndersideZ(-178) - 5, latteUndersideZ(178) - 5);
 
   const meshP12 = buildPartMesh({
     geometry: geomP12,
@@ -314,9 +324,9 @@ export function buildSerreAssembly(materials, isLite = false) {
   // 2. FAÇADE AVANT : 4 Lames basses P03 (R1-R4) + Fenêtre Poly P09 (R5-R6) + 1 Lame haute P03 #5 (R7) + 3 Montants P04
   // ==========================================================================
   const geomP03 = createExtrudedBoardGeometry(1900, 145, 27, PARTS_CATALOG.P03.holes, isLite);
-  const frontSlatRows = [0, 1, 2, 3, 6]; // Rangs 1 à 4 en bas (Z=0..595) + Rang 7 tout en haut (Z=900..1045, bandeau support charnières)
+  const frontSlatRows = [0, 1, 2, 3, 6]; // Rangs 1 à 4 en bas (Z=0..589) + Rang 7 tout en haut (Z=888..1033, bandeau support charnières)
   frontSlatRows.forEach((rowIdx, idx) => {
-    const zBottom = rowIdx * 150;
+    const zBottom = rowIdx * SLAT_PITCH;
     const zCenter = zBottom + 145 / 2;
     const yCenter = -250 + 27 / 2; // Y_cad = -236.5 mm
 
@@ -337,8 +347,8 @@ export function buildSerreAssembly(materials, isLite = false) {
     groups.frontWall.add(mesh);
   });
 
-  // Fenêtre Polycarbonate Avant P09 (1900 × 300 × 10 mm, encadrée entre Rang 4 Z=595 et Rang 7 Z=900, Y=-228)
-  const geomP09 = createExtrudedBoardGeometry(1900, 300, 10, PARTS_CATALOG.P09.holes, isLite);
+  // Fenêtre Polycarbonate Avant P09 (1900 × 293 × 10 mm, encadrée entre Rang 4 Z=589 et Rang 7 Z=888, Y=-228)
+  const geomP09 = createExtrudedBoardGeometry(1900, 293, 10, PARTS_CATALOG.P09.holes, isLite);
   const meshP09 = buildPartMesh({
     geometry: geomP09,
     material: materials.polycarbonate,
@@ -352,12 +362,12 @@ export function buildSerreAssembly(materials, isLite = false) {
     solidMeshes,
     partMeshes
   });
-  meshP09.position.copy(cadToThree(0, -228, 597.5 + 150));
+  meshP09.position.copy(cadToThree(0, -228, 738.5));
   meshP09.userData.basePosition.copy(meshP09.position);
   groups.frontWall.add(meshP09);
 
-  // 3 Montants Avant P04 — Coupe droite à 90° (hauteur = 1045 mm, 70 mm selon X × 45 mm selon Y)
-  const geomP04 = createBeveledPostGeometry(70, 45, 1045, 1045);
+  // 3 Montants Avant P04 — Coupe droite à 90° (hauteur = 1030 mm, 70 mm selon X × 45 mm selon Y)
+  const geomP04 = createBeveledPostGeometry(70, 45, PARTS_CATALOG.P04.length, PARTS_CATALOG.P04.length);
   backPostX.forEach((xCad, idx) => {
     const mesh = buildPartMesh({
       geometry: geomP04,
@@ -415,14 +425,10 @@ export function buildSerreAssembly(materials, isLite = false) {
     }
   ];
 
-  // Pas réel des lames de côté mesuré au mètre : 6 lames assemblées = 885 mm
-  // => 6 × 145 + 5 joints de 3 mm = 885 mm -> pas de 148 mm (au lieu de 150 mm en façade)
-  const SIDE_SLAT_PITCH = (885 - 145) / 5; // 148 mm
-
   sidesConfig.forEach((sc, sIdx) => {
     // 7 lames rectangulaires P05 (rangs 1 à 7, joints de 3 mm : R6 haut = 885 mm, R7 = 888..1033 mm)
     for (let r = 0; r < 7; r++) {
-      const zBottom = r * SIDE_SLAT_PITCH;
+      const zBottom = r * SLAT_PITCH;
       const zCenter = zBottom + 145 / 2;
       const mesh = buildPartMesh({
         geometry: geomP05,
@@ -455,7 +461,7 @@ export function buildSerreAssembly(materials, isLite = false) {
       solidMeshes,
       partMeshes
     });
-    meshP06.position.copy(cadToThree(sc.slatX, 0, 7 * SIDE_SLAT_PITCH));
+    meshP06.position.copy(cadToThree(sc.slatX, 0, 7 * SLAT_PITCH));
     meshP06.userData.basePosition.copy(meshP06.position);
     sc.group.add(meshP06);
 
@@ -513,12 +519,10 @@ export function buildSerreAssembly(materials, isLite = false) {
 
   // ==========================================================================
   // 4. TOIT OUVRANT PAR LE HAUT (roofPivot) :
-  // Axe des 3 charnières Q01 sur l'arête supérieure avant de la 5ème lame P03 #5 (Y_cad = -248 mm, Z_cad = 1046.5 mm)
-  // Charnon fixe vissé à plat verticalement sur la face avant haute de P03 #5 (Rang 7, Z = 1015..1045 mm)
-  // Charnon mobile incliné à 16.7° boulonné sous la plaque de toit P10
+  // Axe des 3 charnières Q01 sur l'arête supérieure avant de la 5ème lame P03 #5 (Y_cad = -248 mm, Z_cad = 1038 mm)
+  // Charnon fixe vissé à plat verticalement sur la face avant haute de P03 #5 (Rang 7, Z = 1000..1033 mm)
+  // Charnon mobile incliné à 16.5° boulonné sous la plaque de toit P10
   // ==========================================================================
-  const HINGE_Y_CAD = -248;
-  const HINGE_Z_CAD = 1046.5;
   const frontHingePivotThree = cadToThree(0, HINGE_Y_CAD, HINGE_Z_CAD);
   groups.roofPivot.position.copy(frontHingePivotThree);
 
@@ -787,15 +791,15 @@ export function buildSerreAssembly(materials, isLite = false) {
 
   const latchConfigs = [
     // Côté Gauche (4 fermetures Hettich : 2 Avant sur rangs 2 et 7, 2 Arrière sur rangs 2 et 7)
-    { side: 'left', dirX: -1, face: 'front', zCad: 222.5, label: 'Q03 #1 (Avant-Gauche Rang 2)' },
-    { side: 'left', dirX: -1, face: 'front', zCad: 972.5, label: 'Q03 #2 (Avant-Gauche Rang 7)' },
-    { side: 'left', dirX: -1, face: 'back', zCad: 222.5, label: 'Q03 #3 (Arrière-Gauche Rang 2)' },
-    { side: 'left', dirX: -1, face: 'back', zCad: 972.5, label: 'Q03 #4 (Arrière-Gauche Rang 7)' },
+    { side: 'left', dirX: -1, face: 'front', zCad: 220.5, label: 'Q03 #1 (Avant-Gauche Rang 2)' },
+    { side: 'left', dirX: -1, face: 'front', zCad: 960.5, label: 'Q03 #2 (Avant-Gauche Rang 7)' },
+    { side: 'left', dirX: -1, face: 'back', zCad: 220.5, label: 'Q03 #3 (Arrière-Gauche Rang 2)' },
+    { side: 'left', dirX: -1, face: 'back', zCad: 960.5, label: 'Q03 #4 (Arrière-Gauche Rang 7)' },
     // Côté Droit (4 fermetures Hettich : 2 Avant sur rangs 2 et 7, 2 Arrière sur rangs 2 et 7)
-    { side: 'right', dirX: 1, face: 'front', zCad: 222.5, label: 'Q03 #5 (Avant-Droit Rang 2)' },
-    { side: 'right', dirX: 1, face: 'front', zCad: 972.5, label: 'Q03 #6 (Avant-Droit Rang 7)' },
-    { side: 'right', dirX: 1, face: 'back', zCad: 222.5, label: 'Q03 #7 (Arrière-Droit Rang 2)' },
-    { side: 'right', dirX: 1, face: 'back', zCad: 972.5, label: 'Q03 #8 (Arrière-Droit Rang 7)' }
+    { side: 'right', dirX: 1, face: 'front', zCad: 220.5, label: 'Q03 #5 (Avant-Droit Rang 2)' },
+    { side: 'right', dirX: 1, face: 'front', zCad: 960.5, label: 'Q03 #6 (Avant-Droit Rang 7)' },
+    { side: 'right', dirX: 1, face: 'back', zCad: 220.5, label: 'Q03 #7 (Arrière-Droit Rang 2)' },
+    { side: 'right', dirX: 1, face: 'back', zCad: 960.5, label: 'Q03 #8 (Arrière-Droit Rang 7)' }
   ];
 
   const toggleLatches = [];

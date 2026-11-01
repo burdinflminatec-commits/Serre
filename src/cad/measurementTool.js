@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { cadToThree, threeToCad } from './geometryBuilder.js';
+import { BACK_TOP_Z, FRONT_TOP_Z } from '../data/serreData.js';
 
 /**
  * Outil de Mesure 3D Interactif (MeasurementTool)
@@ -120,14 +121,14 @@ export class MeasurementTool {
         p2: cadToThree(-1040, 250, 0)
       },
       {
-        label: 'Hauteur Arrière Z : 1195 mm',
+        label: `Hauteur Arrière Z : ${BACK_TOP_Z} mm`,
         p1: cadToThree(1040, 250, 0),
-        p2: cadToThree(1040, 250, 1195)
+        p2: cadToThree(1040, 250, BACK_TOP_Z)
       },
       {
-        label: 'Hauteur Avant Z : 1045 mm',
+        label: `Hauteur Avant Z : ${FRONT_TOP_Z} mm`,
         p1: cadToThree(1040, -250, 0),
-        p2: cadToThree(1040, -250, 1045)
+        p2: cadToThree(1040, -250, FRONT_TOP_Z)
       }
     ];
 
