@@ -2,7 +2,10 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0d121a" />
   <title>Serre Bois & Polycarbonate 1900×500 — Bureau d'Études & Atelier CAD</title>
   <link rel="stylesheet" href="/src/style.css" />
 </head>
@@ -64,6 +67,9 @@
       </div>
 
       <div class="top-actions">
+        <button id="btn-top-fullscreen" class="action-btn accent-btn" title="Passer en Plein Écran sur la tablette (Raccourci : F)">
+          ⛶ Plein Écran
+        </button>
         <button id="btn-top-perf" class="action-btn" title="Basculer entre le Mode Tab A Lite (Mali-T830) et le Mode PC HD">
           ⚡ Mode Tab A Lite
         </button>
@@ -90,6 +96,16 @@
       <!-- VIEWPORT 3D -->
       <div id="viewport-container" class="viewport-container">
         <canvas id="three-canvas"></canvas>
+
+        <!-- Boutons rapides Tablette en haut à droite de la vue 3D (Plein écran + Replier panneau) -->
+        <div class="viewport-quick-bar">
+          <button id="btn-vp-fullscreen" class="vp-quick-btn" title="Basculer en Plein Écran (F)">
+            ⛶ Plein Écran
+          </button>
+          <button id="btn-vp-panel" class="vp-quick-btn" title="Masquer/Afficher le panneau de droite pour élargir la 3D">
+            ⇥ Masquer Panneau
+          </button>
+        </div>
 
         <!-- Calque des étiquettes de mesures 3D -->
         <div id="measurement-labels" class="measurement-labels-layer"></div>

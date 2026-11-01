@@ -187,6 +187,78 @@ if (btnTopPerf) {
 }
 
 // ============================================================================
+// PLEIN ÉCRAN TABLETTE (FULLSCREEN API) & REPLI DU PANNEAU DE DROITE
+// ============================================================================
+const btnTopFullscreen = document.getElementById('btn-top-fullscreen');
+const btnVpFullscreen = document.getElementById('btn-vp-fullscreen');
+const btnVpPanel = document.getElementById('btn-vp-panel');
+
+function isFullscreenActive() {
+  return Boolean(
+    document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+  );
+}
+
+function updateFullscreenButtonsUI() {
+  const active = isFullscreenActive();
+  const label = active ? '⛶ Quitter Plein Écran' : '⛶ Plein Écran';
+  if (btnTopFullscreen) {
+    btnTopFullscreen.textContent = label;
+    btnTopFullscreen.classList.toggle('active', active);
+  }
+  if (btnVpFullscreen) {
+    btnVpFullscreen.textContent = label;
+    btnVpFullscreen.classList.toggle('active', active);
+  }
+}
+
+function toggleFullscreen() {
+  const docEl = document.documentElement;
+  if (!isFullscreenActive()) {
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+    } else if (docEl.webkitRequestFullscreen) {
+      docEl.webkitRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  }
+}
+
+btnTopFullscreen?.addEventListener('click', toggleFullscreen);
+btnVpFullscreen?.addEventListener('click', toggleFullscreen);
+
+document.addEventListener('fullscreenchange', () => {
+  updateFullscreenButtonsUI();
+  setTimeout(onResize, 60);
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  updateFullscreenButtonsUI();
+  setTimeout(onResize, 60);
+});
+
+btnVpPanel?.addEventListener('click', () => {
+  const collapsed = document.body.classList.toggle('panel-collapsed');
+  btnVpPanel.textContent = collapsed ? '⇤ Afficher Panneau' : '⇥ Masquer Panneau';
+  btnVpPanel.classList.toggle('active', collapsed);
+  onResize();
+});
+
+window.addEventListener('keydown', (e) => {
+  if (!isPinUnlocked) return;
+  if ((e.key === 'f' || e.key === 'F') && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    toggleFullscreen();
+  }
+});
+
+// ============================================================================
 // INITIALISATION DU BUREAU D'ÉTUDES & ATELIER CAD 3D
 // ============================================================================
 
