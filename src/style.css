@@ -923,12 +923,12 @@ input[type="range"] {
 .board-qty-tag {
   font-family: var(--font-mono);
   font-size: 10.5px;
-  font-weight: 800;
+  font-weight: 700;
   padding: 1px 6px;
   border-radius: 4px;
-  background: rgba(56, 189, 248, 0.2);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  background: rgba(148, 163, 184, 0.14);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
 .stock-pill {
@@ -936,22 +936,16 @@ input[type="range"] {
   font-family: var(--font-mono);
   padding: 2px 8px;
   border-radius: 99px;
-  background: rgba(34, 197, 94, 0.16);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.28);
   white-space: nowrap;
 }
 
-.stock-pill.to-cut {
-  background: rgba(56, 189, 248, 0.16);
-  color: #7dd3fc;
-  border-color: rgba(56, 189, 248, 0.4);
-}
-
 .stock-pill.to-buy {
-  background: rgba(245, 158, 11, 0.22);
+  background: rgba(245, 158, 11, 0.16);
   color: #fcd34d;
-  border-color: rgba(245, 158, 11, 0.5);
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
 .cutlist-details-box {
@@ -965,7 +959,7 @@ input[type="range"] {
 .cutlist-details-box summary {
   cursor: pointer;
   font-size: 11.5px;
-  color: #86efac;
+  color: #cbd5e1;
   user-select: none;
   display: flex;
   align-items: center;

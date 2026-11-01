@@ -148,22 +148,13 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
       const w = cut.length * scale;
       const isHi = highlightedPartId === cut.partId;
 
-      let fill = isPrint ? '#e2e8f0' : 'rgba(56, 189, 248, 0.2)';
+      let fill = isPrint ? '#e2e8f0' : 'rgba(56, 189, 248, 0.16)';
       let stroke = isPrint ? '#0f172a' : '#38bdf8';
       let strokeW = isHi ? 2.8 : 1.4;
 
       if (isHi && !isPrint) {
         fill = 'rgba(245, 158, 11, 0.42)';
         stroke = '#fde047';
-      } else if (!isPrint && board.status === 'to_buy') {
-        fill = 'rgba(245, 158, 11, 0.2)';
-        stroke = '#f59e0b';
-      } else if (!isPrint && board.status === 'trim_mounted') {
-        fill = 'rgba(16, 185, 129, 0.2)';
-        stroke = '#34d399';
-      } else if (!isPrint && board.status === 'already_cut') {
-        fill = 'rgba(34, 197, 94, 0.14)';
-        stroke = '#4ade80';
       }
 
       const endMm = cut.startX + cut.length;
@@ -178,7 +169,7 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
         shapeInnerSvg = `
           <polygon points="${pTL} ${pTR} ${pBR}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
           <polygon points="${pTL} ${pBL} ${pBR}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
-          <line x1="${x}" y1="${barY}" x2="${x + w}" y2="${barY + barH}" stroke="#f59e0b" stroke-width="2.2" />
+          <line x1="${x}" y1="${barY}" x2="${x + w}" y2="${barY + barH}" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="4 2" />
           <text x="${x + w * 0.72}" y="${barY + 12}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="9.5" font-weight="bold">P06 #2 (D)</text>
           <text x="${x + w * 0.28}" y="${barY + 29}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="9.5" font-weight="bold">P06 #1 (G)</text>
         `;
@@ -200,15 +191,15 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
           ${
             cut.bevel
               ? `
-                <line x1="${x + 6}" y1="${barY}" x2="${x}" y2="${barY + barH}" stroke="#f59e0b" stroke-width="2" />
-                <line x1="${x + w}" y1="${barY}" x2="${x + w - 6}" y2="${barY + barH}" stroke="#f59e0b" stroke-width="2" />
+                <line x1="${x + 6}" y1="${barY}" x2="${x}" y2="${barY + barH}" stroke="${stroke}" stroke-width="1.6" />
+                <line x1="${x + w}" y1="${barY}" x2="${x + w - 6}" y2="${barY + barH}" stroke="${stroke}" stroke-width="1.6" />
               `
               : ''
           }
           <text x="${x + w / 2}" y="${barY + 14}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="10" font-weight="bold">
             ${cut.instanceLabel}
           </text>
-          <text x="${x + w / 2}" y="${barY + 27}" text-anchor="middle" fill="${isPrint ? '#334155' : '#bae6fd'}" font-family="monospace" font-size="9.5">
+          <text x="${x + w / 2}" y="${barY + 27}" text-anchor="middle" fill="${isPrint ? '#334155' : '#94a3b8'}" font-family="monospace" font-size="9.5">
             ${cut.length} mm${cut.bevel ? ` (∠${cut.bevel})` : ''}
           </text>
         `;
@@ -255,21 +246,16 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
     const targetLen = lastCut ? lastCut.length : board.length;
     shortBoardNoteSvg = `
       <text x="${noteX}" y="${barY + 21}" fill="${isPrint ? '#0f172a' : '#94a3b8'}" font-family="monospace" font-size="10">
-        ← Demi-lambourde ${board.length} mm : couper à <tspan fill="${isPrint ? '#000' : '#38bdf8'}" font-weight="bold">${targetLen} mm</tspan> (retirer -${offcutMm} mm)
+        ← Recoupe à ${targetLen} mm (chute ${offcutMm} mm)
       </text>
     `;
   }
 
   const badgeText = board.statusBadge || `Chute ${offcutMm} mm`;
-  const pillClass =
-    board.status === 'to_buy'
-      ? 'to-buy'
-      : board.status === 'to_cut' || board.status === 'trim_mounted'
-      ? 'to-cut'
-      : '';
+  const pillClass = board.status === 'to_buy' ? 'to-buy' : '';
 
   return `
-    <div class="${isPrint ? 'print-board-item' : `board-row ${board.status === 'to_buy' ? 'buy-needed' : ''}`}" data-board-id="${board.stockId}">
+    <div class="${isPrint ? 'print-board-item' : 'board-row'}" data-board-id="${board.stockId}">
       <div class="board-row-header">
         <div class="board-row-title">
           <span class="board-qty-tag">${board.qtyLabel || '×1'}</span>
