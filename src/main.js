@@ -182,9 +182,7 @@ if (btnTopPerf) {
 // PLEIN ÉCRAN (FULLSCREEN API) & REPLI DU PANNEAU DE DROITE
 // ============================================================================
 const btnTopFullscreen = document.getElementById('btn-top-fullscreen');
-const btnVpFullscreen = document.getElementById('btn-vp-fullscreen');
 const btnVpPanel = document.getElementById('btn-vp-panel');
-const btnVpTogglePanel = document.getElementById('btn-vp-toggle-panel');
 
 function isFullscreenActive() {
   return Boolean(
@@ -197,14 +195,9 @@ function isFullscreenActive() {
 
 function updateFullscreenButtonsUI() {
   const active = isFullscreenActive();
-  const label = active ? '⛶ Quitter' : '⛶ Plein écran';
   if (btnTopFullscreen) {
-    btnTopFullscreen.textContent = label;
+    btnTopFullscreen.textContent = active ? '⛶ Quitter' : '⛶ Plein écran';
     btnTopFullscreen.classList.toggle('active', active);
-  }
-  if (btnVpFullscreen) {
-    btnVpFullscreen.textContent = label;
-    btnVpFullscreen.classList.toggle('active', active);
   }
 }
 
@@ -226,7 +219,6 @@ function toggleFullscreen() {
 }
 
 btnTopFullscreen?.addEventListener('click', toggleFullscreen);
-btnVpFullscreen?.addEventListener('click', toggleFullscreen);
 
 document.addEventListener('fullscreenchange', () => {
   updateFullscreenButtonsUI();
@@ -237,15 +229,11 @@ document.addEventListener('webkitfullscreenchange', () => {
   setTimeout(onResize, 60);
 });
 
-function toggleRightPanel() {
+btnVpPanel?.addEventListener('click', () => {
   const collapsed = document.body.classList.toggle('panel-collapsed');
-  btnVpPanel?.classList.toggle('active', collapsed);
-  btnVpTogglePanel?.classList.toggle('active', collapsed);
+  btnVpPanel.classList.toggle('active', collapsed);
   onResize();
-}
-
-btnVpPanel?.addEventListener('click', toggleRightPanel);
-btnVpTogglePanel?.addEventListener('click', toggleRightPanel);
+});
 
 window.addEventListener('keydown', (e) => {
   if (!isPinUnlocked) return;
@@ -324,15 +312,24 @@ const backLight = new THREE.DirectionalLight(0x93c5fd, 0.55);
 backLight.position.set(-1600, 1400, -1900);
 scene.add(backLight);
 
-// Grille discrète au sol
+// Grille technique au sol avec axes centraux bleus (0x38bdf8)
 const gridMajor = new THREE.GridHelper(
-  5600,
-  isLiteMode ? 28 : 56,
-  0x1e293b,
-  0x151e2c
+  7600,
+  isLiteMode ? 38 : 76,
+  0x38bdf8,
+  0x1e293b
 );
 gridMajor.position.y = -0.5;
 scene.add(gridMajor);
+
+// Axes repère au sol (Origine au coin avant-gauche pour lecture intuitive)
+const axesGroup = new THREE.Group();
+axesGroup.position.copy(cadToThree(-1080, -340, 2));
+const arrowX = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 220, 0xef4444, 24, 12);
+const arrowY = new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), new THREE.Vector3(), 220, 0x22c55e, 24, 12);
+const arrowZ = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 220, 0x38bdf8, 24, 12);
+axesGroup.add(arrowX, arrowY, arrowZ);
+scene.add(axesGroup);
 
 // ============================================================================
 // BOUCLE DE RENDU À LA DEMANDE (Zéro charge CPU/GPU au repos sur Exynos 7870)

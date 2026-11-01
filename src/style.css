@@ -171,42 +171,6 @@ html, body {
   outline: none;
 }
 
-/* BOUTONS RAPIDES TABLETTE EN HAUT À DROITE DE LA VUE 3D */
-.viewport-quick-bar {
-  position: absolute;
-  top: 10px;
-  right: 274px;
-  display: flex;
-  gap: 6px;
-  z-index: 22;
-}
-
-body.lite-mode .viewport-quick-bar,
-body.panel-collapsed .viewport-quick-bar {
-  right: 10px;
-}
-
-.vp-quick-btn {
-  background: #151e2c;
-  color: #f8fafc;
-  border: 1px solid #38bdf8;
-  padding: 6px 11px;
-  border-radius: 7px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.vp-quick-btn:hover,
-.vp-quick-btn.active {
-  background: #0284c7;
-  color: #ffffff;
-}
-
 body.panel-collapsed .control-panel {
   display: none !important;
 }
@@ -510,7 +474,7 @@ body.panel-collapsed .control-panel {
   background: rgba(15, 23, 42, 0.45);
   border: 1px solid rgba(148, 163, 184, 0.12);
   border-radius: 6px;
-  padding: 5px 8px;
+  padding: 6px 9px 7px;
 }
 
 .mech-header {
@@ -518,7 +482,8 @@ body.panel-collapsed .control-panel {
   justify-content: space-between;
   align-items: center;
   font-size: 11px;
-  margin-bottom: 2px;
+  line-height: 1.25;
+  margin-bottom: 6px;
 }
 
 .mech-header strong {
@@ -580,7 +545,8 @@ input[type="range"] {
   width: 100%;
   accent-color: var(--accent-cyan);
   cursor: pointer;
-  height: 5px;
+  height: 16px;
+  margin: 0;
   display: block;
 }
 
