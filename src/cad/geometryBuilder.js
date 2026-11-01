@@ -799,9 +799,13 @@ export function buildSerreAssembly(materials, isLite = false) {
     leverPivot.position.set(lc.dirX * 14, 0, outZ * 3);
     meshQ03.add(leverPivot);
 
+    // Axe d'articulation de la boucle (étrier) décalé côté levier (-dirX * 5, outZ * 1.5)
+    // pour un vrai effet genouillère : à l'ouverture, l'axe avance vers +outZ (loin du bois !)
     const bailPivot = new THREE.Group();
-    bailPivot.position.set(lc.dirX * 6, 0, 0);
+    bailPivot.position.set(-lc.dirX * 5, 0, outZ * 1.5);
     leverPivot.add(bailPivot);
+
+    const bailLen = 34; // Franchit la distance entre bailPivot (X=±942) et le bec de gâche (X=±976)
 
     if (isLite) {
       // En mode Lite (Mali-T830), réduire les draw calls : 1 boîte levier + 1 étrier simplifié
@@ -810,8 +814,8 @@ export function buildSerreAssembly(materials, isLite = false) {
       const leverMesh = new THREE.Mesh(leverBodyGeom, materials.metal_galva);
       leverPivot.add(leverMesh);
 
-      const bailBoxGeom = new THREE.BoxGeometry(23, 23, 3);
-      bailBoxGeom.translate((lc.dirX * 23) / 2, 0, -outZ * 1);
+      const bailBoxGeom = new THREE.BoxGeometry(bailLen, 23, 3);
+      bailBoxGeom.translate((lc.dirX * bailLen) / 2, 0, -outZ * 1);
       const bailBoxMesh = new THREE.Mesh(bailBoxGeom, materials.metal_galva);
       bailBoxMesh.add(
         new THREE.LineSegments(new THREE.EdgesGeometry(bailBoxGeom, 15), materials.edge_line)
@@ -843,8 +847,9 @@ export function buildSerreAssembly(materials, isLite = false) {
       );
       leverPivot.add(thumbTabMesh);
 
-      // Étrier en fil d'acier rond Ø 3 mm (23 × 23 mm selon plan Hettich) :
-      const bailLen = 23;
+      // Étrier en fil d'acier rond Ø 3 mm (largeur 23 mm) :
+      // Part de bailPivot (|X|=942, |Z|=257.5) jusqu'au bec de gâche (|X|=976, |Z|=252.5),
+      // donc 9.5 mm devant le bois P05 (|Z|<=248) sans aucune collision !
       const bailHalfW = 10;
       const wireRad = 1.5;
 
@@ -857,7 +862,7 @@ export function buildSerreAssembly(materials, isLite = false) {
       wireBotGeom.translate((lc.dirX * bailLen) / 2, -bailHalfW, 0);
 
       const wireFrontGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailHalfW * 2 + 2, 12);
-      wireFrontGeom.translate(lc.dirX * bailLen, 0, -outZ * 1.5);
+      wireFrontGeom.translate(lc.dirX * bailLen, 0, -outZ * 3.5);
 
       const wireBackTopGeom = new THREE.CylinderGeometry(wireRad, wireRad, 4.5, 10);
       wireBackTopGeom.translate(0, bailHalfW - 2, 0);
@@ -994,20 +999,34 @@ export function buildSerreAssembly(materials, isLite = false) {
     const leftShift = leftSideOffsetMm !== null ? leftSideOffsetMm : sidesOffsetMm;
     const rightShift = rightSideOffsetMm !== null ? rightSideOffsetMm : sidesOffsetMm;
 
-    // Animer l'ouverture du levier et de l'étrier en U des 8 fermetures Hettich Q03 dès qu'un côté s'ouvre
+    // Animer l'ouverture en 2 temps des 8 fermetures Hettich Q03 (zéro collision avec le bois P05) :
+    // 1. shift = 0..16 mm : Le levier s'ouvre et la boucle s'écarte vers l'AVANT/ARRIÈRE (+outZ, loin du bois) pour franchir le bec de gâche
+    // 2. shift = 16..34 mm : La boucle bascule à ~135° vers la façade fixe (|X| < 948 mm) hors du couloir du panneau mobile
     toggleLatches.forEach(({ lc, outZ, leverPivot, bailPivot }) => {
       const shift = lc.side === 'left' ? leftShift : rightShift;
-      const unlockT = Math.min(1, shift / 30);
-      leverPivot.rotation.y = lc.dirX * outZ * unlockT * 1.1;
-      bailPivot.rotation.y = -lc.dirX * outZ * unlockT * 0.55;
+      const u1 = Math.min(1, Math.max(0, shift / 16));
+      const u2 = Math.min(1, Math.max(0, (shift - 16) / 18));
+
+      // Angle d'ouverture du levier (0 -> 95°)
+      const thetaLever = (u1 * 1.15 + u2 * 0.5);
+      // Angle monde de la boucle vers l'extérieur (+outZ) : 0 -> 45° (décrochage) -> 135° (repli côté façade fixe)
+      const betaWorld = u1 * 0.78 + u2 * 1.57;
+
+      leverPivot.rotation.y = lc.dirX * outZ * thetaLever;
+      // Comme bailPivot est enfant de leverPivot, on retranche thetaLever + betaWorld pour tourner la boucle vers +outZ (loin du bois !)
+      bailPivot.rotation.y = -lc.dirX * outZ * (thetaLever + betaWorld);
     });
+
+    // Le panneau amovible P05 commence à glisser (shift > 20 mm) uniquement une fois la boucle Q03 décrochée et dégagée !
+    const UNLOCK_CLEAR_MM = 20;
 
     // Côté Gauche : coin arrière local (-963.5, 0, -236.5) -> pivote de 0° à -90° pour s'aligner avec le mur arrière
     {
       const px = -963.5;
       const pz = -236.5;
-      const slideOut = Math.min(leftShift, 250) + Math.max(0, leftShift - 250) * 0.15;
-      const rotT = Math.min(1, Math.max(0, (leftShift - 250) / 350));
+      const effLeft = Math.max(0, leftShift - UNLOCK_CLEAR_MM);
+      const slideOut = Math.min(effLeft, 250) + Math.max(0, effLeft - 250) * 0.15;
+      const rotT = Math.min(1, Math.max(0, (effLeft - 250) / 330));
       const smoothRot = rotT * rotT * (3 - 2 * rotT);
       const theta = -smoothRot * (Math.PI / 2);
 
@@ -1026,8 +1045,9 @@ export function buildSerreAssembly(materials, isLite = false) {
     {
       const px = 963.5;
       const pz = -236.5;
-      const slideOut = Math.min(rightShift, 250) + Math.max(0, rightShift - 250) * 0.15;
-      const rotT = Math.min(1, Math.max(0, (rightShift - 250) / 350));
+      const effRight = Math.max(0, rightShift - UNLOCK_CLEAR_MM);
+      const slideOut = Math.min(effRight, 250) + Math.max(0, effRight - 250) * 0.15;
+      const rotT = Math.min(1, Math.max(0, (effRight - 250) / 330));
       const smoothRot = rotT * rotT * (3 - 2 * rotT);
       const theta = smoothRot * (Math.PI / 2);
 
