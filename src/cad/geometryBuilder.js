@@ -21,7 +21,11 @@ export function threeToCad(vec3) {
  * Crée une géométrie extrudée rectangulaire avec de vrais trous débouchants (THREE.Shape + .holes)
  * Centrée en X: [-L/2, +L/2], Y: [-W/2, +W/2], Z: [-T/2, +T/2]
  */
-function createExtrudedBoardGeometry(length, width, thickness, holes = []) {
+function createExtrudedBoardGeometry(length, width, thickness, holes = [], isLite = false) {
+  if (isLite || !holes || holes.length === 0) {
+    return new THREE.BoxGeometry(length, width, thickness);
+  }
+
   const shape = new THREE.Shape();
   const hw = length / 2;
   const hh = width / 2;
@@ -91,7 +95,7 @@ function createBeveledPostGeometry(widthX, thicknessY, hAtMinY, hAtMaxY) {
 /**
  * Crée la 8ème lame supérieure de pignon (P06) coupée en pente de 145 mm (arrière) à 0 mm (avant)
  */
-function createSlopedGableBoardGeometry(lengthY, maxHeightZ, thicknessX, holes = []) {
+function createSlopedGableBoardGeometry(lengthY, maxHeightZ, thicknessX, holes = [], isLite = false) {
   const shape = new THREE.Shape();
   const hy = lengthY / 2; // de -248 (avant) à +248 (arrière)
 
@@ -105,22 +109,24 @@ function createSlopedGableBoardGeometry(lengthY, maxHeightZ, thicknessX, holes =
   shape.lineTo(hy, maxHeightZ);
   shape.closePath();
 
-  holes.forEach((h) => {
-    const hx = hy - h.x;
-    const hyHole = h.y;
-    // Vérifier que le trou est bien dans le triangle
-    const maxHAtX = ((hx - frontY) / runLength) * maxHeightZ;
-    if (hx > frontY + 12 && hyHole < maxHAtX - 8) {
-      const holePath = new THREE.Path();
-      holePath.absarc(hx, hyHole, h.d / 2, 0, Math.PI * 2, false);
-      shape.holes.push(holePath);
-    }
-  });
+  if (!isLite && holes && holes.length > 0) {
+    holes.forEach((h) => {
+      const hx = hy - h.x;
+      const hyHole = h.y;
+      // Vérifier que le trou est bien dans le triangle
+      const maxHAtX = ((hx - frontY) / runLength) * maxHeightZ;
+      if (hx > frontY + 12 && hyHole < maxHAtX - 8) {
+        const holePath = new THREE.Path();
+        holePath.absarc(hx, hyHole, h.d / 2, 0, Math.PI * 2, false);
+        shape.holes.push(holePath);
+      }
+    });
+  }
 
   const geom = new THREE.ExtrudeGeometry(shape, {
     depth: thicknessX,
     bevelEnabled: false,
-    curveSegments: 12
+    curveSegments: isLite ? 6 : 12
   });
 
   // Réaligner vers Three.js : x = X_cad (-thicknessX/2..+thicknessX/2), y = Z_cad (0..145), z = -Y_cad
@@ -147,13 +153,14 @@ function buildPartMesh({
   subGroup,
   explodeVecCad = { x: 0, y: 0, z: 0 },
   registerSolid = true,
+  isLite = false,
   solidMeshes,
   partMeshes
 }) {
   const catalogItem = PARTS_CATALOG[partId];
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
+  mesh.castShadow = !isLite;
+  mesh.receiveShadow = !isLite;
 
   mesh.userData = {
     partId,
@@ -166,8 +173,8 @@ function buildPartMesh({
     basePosition: new THREE.Vector3()
   };
 
-  // Arêtes techniques fines
-  const edgesGeom = new THREE.EdgesGeometry(geometry, 18);
+  // Arêtes techniques fines (seuil 15° en mode Lite selon le profil Mali-T830)
+  const edgesGeom = new THREE.EdgesGeometry(geometry, isLite ? 15 : 18);
   const edgesLine = new THREE.LineSegments(edgesGeom, edgeMaterial);
   edgesLine.userData.isEdgeLine = true;
   mesh.add(edgesLine);
@@ -183,7 +190,7 @@ function buildPartMesh({
 /**
  * Construit l'assemblage 3D complet de la Serre 1900 × 500 mm
  */
-export function buildSerreAssembly(materials) {
+export function buildSerreAssembly(materials, isLite = false) {
   const rootGroup = new THREE.Group();
   const solidMeshes = [];
   const partMeshes = [];
@@ -204,7 +211,7 @@ export function buildSerreAssembly(materials) {
   // ==========================================================================
   // 1. FAÇADE ARRIÈRE : 8 Lames P01 (1900×145×27) + 3 Montants P02 (70×45)
   // ==========================================================================
-  const geomP01 = createExtrudedBoardGeometry(1900, 145, 27, PARTS_CATALOG.P01.holes);
+  const geomP01 = createExtrudedBoardGeometry(1900, 145, 27, PARTS_CATALOG.P01.holes, isLite);
   for (let r = 0; r < 8; r++) {
     const zBottom = r * 150;
     const zCenter = zBottom + 145 / 2;
@@ -218,6 +225,7 @@ export function buildSerreAssembly(materials) {
       instanceId: `P01 #${r + 1}`,
       subGroup: 'backWall',
       explodeVecCad: { x: 0, y: 260 + r * 12, z: (r - 3.5) * 18 },
+      isLite,
       solidMeshes,
       partMeshes
     });
@@ -241,6 +249,7 @@ export function buildSerreAssembly(materials) {
       instanceId: `P02 #${idx + 1}`,
       subGroup: 'backWall',
       explodeVecCad: { x: xCad * 0.08, y: 120, z: 0 },
+      isLite,
       solidMeshes,
       partMeshes
     });
@@ -251,7 +260,7 @@ export function buildSerreAssembly(materials) {
 
   // Unique Traverse Haute Centrale P12 (370 × 70 × 45 mm à X=0) reliant P04 #2 (Avant) et P02 #2 (Arrière)
   // Plaquée sous la pente du toit (16.7°) entre Y_cad = -178 et Y_cad = +178, sans rien au sol !
-  const geomP12 = createExtrudedBoardGeometry(370, 70, 45, PARTS_CATALOG.P12.holes);
+  const geomP12 = createExtrudedBoardGeometry(370, 70, 45, PARTS_CATALOG.P12.holes, isLite);
   geomP12.rotateY(Math.PI / 2);
   geomP12.rotateZ(Math.PI / 2);
   geomP12.rotateX(ROOF_SLOPE_RAD);
@@ -264,6 +273,7 @@ export function buildSerreAssembly(materials) {
     instanceId: 'P12 #1 (Portique Central X=0)',
     subGroup: 'backWall',
     explodeVecCad: { x: 0, y: 0, z: 150 },
+    isLite,
     solidMeshes,
     partMeshes
   });
@@ -274,7 +284,7 @@ export function buildSerreAssembly(materials) {
   // ==========================================================================
   // 2. FAÇADE AVANT : 5 Lames P03 + Fenêtre Poly P09 + 3 Montants P04
   // ==========================================================================
-  const geomP03 = createExtrudedBoardGeometry(1900, 145, 27, PARTS_CATALOG.P03.holes);
+  const geomP03 = createExtrudedBoardGeometry(1900, 145, 27, PARTS_CATALOG.P03.holes, isLite);
   for (let r = 0; r < 5; r++) {
     const zBottom = r * 150;
     const zCenter = zBottom + 145 / 2;
@@ -288,6 +298,7 @@ export function buildSerreAssembly(materials) {
       instanceId: `P03 #${r + 1}`,
       subGroup: 'frontWall',
       explodeVecCad: { x: 0, y: -260 - r * 12, z: (r - 2) * 18 },
+      isLite,
       solidMeshes,
       partMeshes
     });
@@ -297,7 +308,7 @@ export function buildSerreAssembly(materials) {
   }
 
   // Fenêtre Polycarbonate Avant P09 (1900 × 300 × 10 mm, couvre Z=745..1045, Y=-228)
-  const geomP09 = createExtrudedBoardGeometry(1900, 300, 10, PARTS_CATALOG.P09.holes);
+  const geomP09 = createExtrudedBoardGeometry(1900, 300, 10, PARTS_CATALOG.P09.holes, isLite);
   const meshP09 = buildPartMesh({
     geometry: geomP09,
     material: materials.polycarbonate,
@@ -307,6 +318,7 @@ export function buildSerreAssembly(materials) {
     subGroup: 'frontWall',
     explodeVecCad: { x: 0, y: -340, z: 80 },
     registerSolid: false,
+    isLite,
     solidMeshes,
     partMeshes
   });
@@ -325,6 +337,7 @@ export function buildSerreAssembly(materials) {
       instanceId: `P04 #${idx + 1}`,
       subGroup: 'frontWall',
       explodeVecCad: { x: xCad * 0.08, y: -120, z: 0 },
+      isLite,
       solidMeshes,
       partMeshes
     });
@@ -336,18 +349,18 @@ export function buildSerreAssembly(materials) {
   // ==========================================================================
   // 3. CÔTÉS AMOVIBLES GAUCHE (sideLeft) & DROIT (sideRight)
   // ==========================================================================
-  const geomP05 = createExtrudedBoardGeometry(496, 145, 27, PARTS_CATALOG.P05.holes);
+  const geomP05 = createExtrudedBoardGeometry(496, 145, 27, PARTS_CATALOG.P05.holes, isLite);
   // Pour les lames de côté P05, leur longueur (496) est orientée selon Y_cad (three.z)
   // et leur épaisseur (27) selon X_cad (three.x) -> rotation Y de 90° sur la géométrie
   geomP05.rotateY(Math.PI / 2);
 
-  const geomP06 = createSlopedGableBoardGeometry(496, 145, 27, PARTS_CATALOG.P06.holes);
+  const geomP06 = createSlopedGableBoardGeometry(496, 145, 27, PARTS_CATALOG.P06.holes, isLite);
   // Montants de côtés amovibles P07 (1155 mm) et P08 (1030 mm) — Coupe droite à 90°
   const geomP07 = createBeveledPostGeometry(45, 70, 1155, 1155);
   const geomP08 = createBeveledPostGeometry(45, 70, 1030, 1030);
 
   // Traverse inclinée P13 (320 × 70 × 45 mm) entre les sommets de P08 et P07 pour tenir la lame en pente P06
-  const geomP13 = createExtrudedBoardGeometry(320, 70, 45, PARTS_CATALOG.P13.holes);
+  const geomP13 = createExtrudedBoardGeometry(320, 70, 45, PARTS_CATALOG.P13.holes, isLite);
   geomP13.rotateY(Math.PI / 2);
   geomP13.rotateX(ROOF_SLOPE_RAD);
 
@@ -383,6 +396,7 @@ export function buildSerreAssembly(materials) {
         instanceId: `P05 #${sc.instOffset + r + 1}`,
         subGroup: sc.key,
         explodeVecCad: { x: sc.dirX * (320 + r * 12), y: 0, z: (r - 3) * 15 },
+        isLite,
         solidMeshes,
         partMeshes
       });
@@ -400,6 +414,7 @@ export function buildSerreAssembly(materials) {
       instanceId: `P06 #${sIdx + 1}`,
       subGroup: sc.key,
       explodeVecCad: { x: sc.dirX * 420, y: 0, z: 90 },
+      isLite,
       solidMeshes,
       partMeshes
     });
@@ -416,6 +431,7 @@ export function buildSerreAssembly(materials) {
       instanceId: `P07 #${sIdx + 1}`,
       subGroup: sc.key,
       explodeVecCad: { x: sc.dirX * 220, y: 40, z: 0 },
+      isLite,
       solidMeshes,
       partMeshes
     });
@@ -432,6 +448,7 @@ export function buildSerreAssembly(materials) {
       instanceId: `P08 #${sIdx + 1}`,
       subGroup: sc.key,
       explodeVecCad: { x: sc.dirX * 220, y: -40, z: 0 },
+      isLite,
       solidMeshes,
       partMeshes
     });
@@ -448,6 +465,7 @@ export function buildSerreAssembly(materials) {
       instanceId: `P13 #${sIdx + 1} (Support P06 ${sIdx === 0 ? 'Gauche' : 'Droit'})`,
       subGroup: sc.key,
       explodeVecCad: { x: sc.dirX * 260, y: 0, z: 80 },
+      isLite,
       solidMeshes,
       partMeshes
     });
@@ -471,7 +489,7 @@ export function buildSerreAssembly(materials) {
   groups.roofPivot.add(roofSlopeGroup);
 
   // Plaque Polycarbonate de Toit P10 (2000 × 660 × 10 mm)
-  const geomP10 = createExtrudedBoardGeometry(2000, 660, 10, PARTS_CATALOG.P10.holes);
+  const geomP10 = createExtrudedBoardGeometry(2000, 660, 10, PARTS_CATALOG.P10.holes, isLite);
   geomP10.rotateX(-Math.PI / 2);
 
   const meshP10 = buildPartMesh({
@@ -483,6 +501,7 @@ export function buildSerreAssembly(materials) {
     subGroup: 'roof',
     explodeVecCad: { x: 0, y: 0, z: 320 },
     registerSolid: false,
+    isLite,
     solidMeshes,
     partMeshes
   });
@@ -491,7 +510,7 @@ export function buildSerreAssembly(materials) {
   roofSlopeGroup.add(meshP10);
 
   // 2 Lattes Raidisseurs Sous-Toit P11 (890 × 68 × 27 mm)
-  const geomP11 = createExtrudedBoardGeometry(890, 68, 27, PARTS_CATALOG.P11.holes);
+  const geomP11 = createExtrudedBoardGeometry(890, 68, 27, PARTS_CATALOG.P11.holes, isLite);
   geomP11.rotateX(-Math.PI / 2);
 
   const slatPositions = [
@@ -507,6 +526,7 @@ export function buildSerreAssembly(materials) {
       instanceId: sp.label,
       subGroup: 'roof',
       explodeVecCad: { x: 0, y: 0, z: 210 },
+      isLite,
       solidMeshes,
       partMeshes
     });
@@ -518,7 +538,7 @@ export function buildSerreAssembly(materials) {
   // ==========================================================================
   // 5. QUINCAILLERIE : 3 Charnières Q01 + Compas Vérin TecTake Q02 (46×26.5 cm)
   // ==========================================================================
-  const geomQ01 = createExtrudedBoardGeometry(80, 60, 4, PARTS_CATALOG.Q01.holes);
+  const geomQ01 = createExtrudedBoardGeometry(80, 60, 4, PARTS_CATALOG.Q01.holes, isLite);
   const hingeMeshes = [];
   backPostX.forEach((xCad, idx) => {
     const meshQ01 = buildPartMesh({
@@ -529,6 +549,7 @@ export function buildSerreAssembly(materials) {
       instanceId: `Q01 #${idx + 1}`,
       subGroup: 'hardware',
       explodeVecCad: { x: 0, y: -180, z: 140 },
+      isLite,
       solidMeshes,
       partMeshes
     });
@@ -550,10 +571,16 @@ export function buildSerreAssembly(materials) {
   const L_CYL = 175; // mm (longueur du cylindre noir)
 
   // Support/équerre de maintien du cylindre sur le montant central (cliquable Q02)
-  const geomQ02Bracket = createExtrudedBoardGeometry(45, 45, 30, [
-    { x: 12, y: 22.5, d: 5 },
-    { x: 33, y: 22.5, d: 5 }
-  ]);
+  const geomQ02Bracket = createExtrudedBoardGeometry(
+    45,
+    45,
+    30,
+    [
+      { x: 12, y: 22.5, d: 5 },
+      { x: 33, y: 22.5, d: 5 }
+    ],
+    isLite
+  );
   const meshQ02 = buildPartMesh({
     geometry: geomQ02Bracket,
     material: materials.metal_galva,
@@ -562,17 +589,20 @@ export function buildSerreAssembly(materials) {
     instanceId: 'Q02 #1 (Cylindre Thermique Seul - Poussée Directe)',
     subGroup: 'hardware',
     explodeVecCad: { x: 0, y: 90, z: 120 },
+    isLite,
     solidMeshes,
     partMeshes
   });
   groups.hardware.add(meshQ02);
 
   // Corps du cylindre thermostatique noir (175 mm vertical sous le support)
-  const blackCylGeom = new THREE.CylinderGeometry(9.5, 9.5, L_CYL, 20);
+  const blackCylGeom = new THREE.CylinderGeometry(9.5, 9.5, L_CYL, isLite ? 8 : 20);
   const blackCylMesh = new THREE.Mesh(blackCylGeom, materials.metal_dark);
-  blackCylMesh.add(
-    new THREE.LineSegments(new THREE.EdgesGeometry(blackCylGeom, 25), materials.edge_line)
-  );
+  if (!isLite) {
+    blackCylMesh.add(
+      new THREE.LineSegments(new THREE.EdgesGeometry(blackCylGeom, 25), materials.edge_line)
+    );
+  }
   // Le haut du cylindre noir traverse l'équerre (à +12 mm), le bas descend à -163 mm
   blackCylMesh.position.set(0, -L_CYL / 2 + 12, 0);
   meshQ02.add(blackCylMesh);
@@ -580,14 +610,14 @@ export function buildSerreAssembly(materials) {
   // Tige de piston argentée (Ø 8 mm) qui sort verticalement vers le haut + patin d'appui libre
   const pistonGroup = new THREE.Group();
   const rodMaxLen = 110;
-  const rodGeom = new THREE.CylinderGeometry(4, 4, rodMaxLen, 16);
+  const rodGeom = new THREE.CylinderGeometry(4, 4, rodMaxLen, isLite ? 8 : 16);
   // Quand pistonGroup.position.y = sortie (0..90 mm), le haut de la tige pousse le toit
   rodGeom.translate(0, -rodMaxLen / 2, 0);
   const rodMesh = new THREE.Mesh(rodGeom, materials.metal_galva);
   pistonGroup.add(rodMesh);
 
   // Embout / patin caoutchouc d'appui libre en sommet de tige (le toit se pose dessus sans être vissé)
-  const padGeom = new THREE.CylinderGeometry(13, 10, 8, 18);
+  const padGeom = new THREE.CylinderGeometry(13, 10, 8, isLite ? 8 : 18);
   padGeom.translate(0, 4, 0);
   const padMesh = new THREE.Mesh(padGeom, materials.metal_dark);
   pistonGroup.add(padMesh);
@@ -613,10 +643,16 @@ export function buildSerreAssembly(materials) {
   // --------------------------------------------------------------------------
   const geomChassisBase = new THREE.BoxGeometry(38, 13, 6);
   // Gâche plate 36 × 15 × 2 mm (posée dans le plan Y-Z à X = ±978 mm) avec ses 2 trous Ø 4 mm (espacés de 20 mm)
-  const geomCatchPlate = createExtrudedBoardGeometry(36, 15, 2, [
-    { x: 8.25, y: 7.5, d: 4 },
-    { x: 28.25, y: 7.5, d: 4 }
-  ]);
+  const geomCatchPlate = createExtrudedBoardGeometry(
+    36,
+    15,
+    2,
+    [
+      { x: 8.25, y: 7.5, d: 4 },
+      { x: 28.25, y: 7.5, d: 4 }
+    ],
+    isLite
+  );
   // Orienter la longueur (36 mm) selon Z_three (Y_cad) et l'épaisseur (2 mm) selon X_three (X_cad)
   geomCatchPlate.rotateY(Math.PI / 2);
 
@@ -648,6 +684,7 @@ export function buildSerreAssembly(materials) {
       instanceId: lc.label,
       subGroup: 'hardware',
       explodeVecCad: { x: lc.dirX * 60, y: lc.face === 'front' ? -140 : 140, z: 0 },
+      isLite,
       solidMeshes,
       partMeshes
     });
@@ -660,75 +697,114 @@ export function buildSerreAssembly(materials) {
     leverPivot.position.set(lc.dirX * 14, 0, outZ * 3);
     meshQ03.add(leverPivot);
 
-    // Corps plat du levier (36 × 13 × 2.5 mm)
-    const leverBodyGeom = new THREE.BoxGeometry(36, 13, 2.5);
-    leverBodyGeom.translate(-lc.dirX * 14, 0, outZ * 2);
-    const leverMesh = new THREE.Mesh(leverBodyGeom, materials.metal_galva);
-    leverMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(leverBodyGeom, 25), materials.edge_line));
-    leverPivot.add(leverMesh);
-
-    // Palette de pouce relevée au bout du levier (portant la longueur à 49 mm)
-    const thumbTabGeom = new THREE.BoxGeometry(11, 13, 2.5);
-    thumbTabGeom.rotateY(-lc.dirX * outZ * 0.38);
-    thumbTabGeom.translate(-lc.dirX * 36, 0, outZ * 4.2);
-    const thumbTabMesh = new THREE.Mesh(thumbTabGeom, materials.metal_galva);
-    thumbTabMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(thumbTabGeom, 25), materials.edge_line));
-    leverPivot.add(thumbTabMesh);
-
-    // Étrier en fil d'acier rond Ø 3 mm (23 × 23 mm selon plan Hettich) :
-    // Articulé sur les flancs du levier (largeur 23 mm autour du corps de 13 mm, longueur 23 mm)
     const bailPivot = new THREE.Group();
     bailPivot.position.set(lc.dirX * 6, 0, 0);
     leverPivot.add(bailPivot);
 
-    const bailLen = 23; // 23 mm de long : part de X=±953 et rejoint le bec de la gâche à X=±976 mm !
-    const bailHalfW = 10; // largeur ext = 20 + 3 = 23 mm !
-    const wireRad = 1.5; // Ø 3 mm
+    if (isLite) {
+      // En mode Lite (Mali-T830), réduire les draw calls : 1 boîte levier + 1 étrier simplifié
+      const leverBodyGeom = new THREE.BoxGeometry(47, 13, 2.5);
+      leverBodyGeom.translate(-lc.dirX * 18, 0, outZ * 2);
+      const leverMesh = new THREE.Mesh(leverBodyGeom, materials.metal_galva);
+      leverPivot.add(leverMesh);
 
-    const wireTopGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailLen, 12);
-    wireTopGeom.rotateZ(Math.PI / 2);
-    wireTopGeom.translate((lc.dirX * bailLen) / 2, bailHalfW, 0);
+      const bailBoxGeom = new THREE.BoxGeometry(23, 23, 3);
+      bailBoxGeom.translate((lc.dirX * 23) / 2, 0, -outZ * 1);
+      const bailBoxMesh = new THREE.Mesh(bailBoxGeom, materials.metal_galva);
+      bailBoxMesh.add(
+        new THREE.LineSegments(new THREE.EdgesGeometry(bailBoxGeom, 15), materials.edge_line)
+      );
+      bailPivot.add(bailBoxMesh);
 
-    const wireBotGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailLen, 12);
-    wireBotGeom.rotateZ(Math.PI / 2);
-    wireBotGeom.translate((lc.dirX * bailLen) / 2, -bailHalfW, 0);
-
-    const wireFrontGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailHalfW * 2 + 2, 12);
-    wireFrontGeom.translate(lc.dirX * bailLen, 0, -outZ * 1.5);
-
-    const wireBackTopGeom = new THREE.CylinderGeometry(wireRad, wireRad, 4.5, 10);
-    wireBackTopGeom.translate(0, bailHalfW - 2, 0);
-    const wireBackBotGeom = new THREE.CylinderGeometry(wireRad, wireRad, 4.5, 10);
-    wireBackBotGeom.translate(0, -bailHalfW + 2, 0);
-
-    const wireTopMesh = new THREE.Mesh(wireTopGeom, materials.metal_galva);
-    const wireBotMesh = new THREE.Mesh(wireBotGeom, materials.metal_galva);
-    const wireFrontMesh = new THREE.Mesh(wireFrontGeom, materials.metal_galva);
-    const wireBackTopMesh = new THREE.Mesh(wireBackTopGeom, materials.metal_galva);
-    const wireBackBotMesh = new THREE.Mesh(wireBackBotGeom, materials.metal_galva);
-    bailPivot.add(wireTopMesh, wireBotMesh, wireFrontMesh, wireBackTopMesh, wireBackBotMesh);
-
-    [leverMesh, thumbTabMesh, wireTopMesh, wireBotMesh, wireFrontMesh, wireBackTopMesh, wireBackBotMesh].forEach(
-      (m) => {
+      [leverMesh, bailBoxMesh].forEach((m) => {
         m.userData = meshQ03.userData;
         partMeshes.push(m);
         solidMeshes.push(m);
-      }
-    );
+      });
+    } else {
+      // Corps plat du levier (36 × 13 × 2.5 mm)
+      const leverBodyGeom = new THREE.BoxGeometry(36, 13, 2.5);
+      leverBodyGeom.translate(-lc.dirX * 14, 0, outZ * 2);
+      const leverMesh = new THREE.Mesh(leverBodyGeom, materials.metal_galva);
+      leverMesh.add(
+        new THREE.LineSegments(new THREE.EdgesGeometry(leverBodyGeom, 25), materials.edge_line)
+      );
+      leverPivot.add(leverMesh);
+
+      // Palette de pouce relevée au bout du levier (portant la longueur à 49 mm)
+      const thumbTabGeom = new THREE.BoxGeometry(11, 13, 2.5);
+      thumbTabGeom.rotateY(-lc.dirX * outZ * 0.38);
+      thumbTabGeom.translate(-lc.dirX * 36, 0, outZ * 4.2);
+      const thumbTabMesh = new THREE.Mesh(thumbTabGeom, materials.metal_galva);
+      thumbTabMesh.add(
+        new THREE.LineSegments(new THREE.EdgesGeometry(thumbTabGeom, 25), materials.edge_line)
+      );
+      leverPivot.add(thumbTabMesh);
+
+      // Étrier en fil d'acier rond Ø 3 mm (23 × 23 mm selon plan Hettich) :
+      const bailLen = 23;
+      const bailHalfW = 10;
+      const wireRad = 1.5;
+
+      const wireTopGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailLen, 12);
+      wireTopGeom.rotateZ(Math.PI / 2);
+      wireTopGeom.translate((lc.dirX * bailLen) / 2, bailHalfW, 0);
+
+      const wireBotGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailLen, 12);
+      wireBotGeom.rotateZ(Math.PI / 2);
+      wireBotGeom.translate((lc.dirX * bailLen) / 2, -bailHalfW, 0);
+
+      const wireFrontGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailHalfW * 2 + 2, 12);
+      wireFrontGeom.translate(lc.dirX * bailLen, 0, -outZ * 1.5);
+
+      const wireBackTopGeom = new THREE.CylinderGeometry(wireRad, wireRad, 4.5, 10);
+      wireBackTopGeom.translate(0, bailHalfW - 2, 0);
+      const wireBackBotGeom = new THREE.CylinderGeometry(wireRad, wireRad, 4.5, 10);
+      wireBackBotGeom.translate(0, -bailHalfW + 2, 0);
+
+      const wireTopMesh = new THREE.Mesh(wireTopGeom, materials.metal_galva);
+      const wireBotMesh = new THREE.Mesh(wireBotGeom, materials.metal_galva);
+      const wireFrontMesh = new THREE.Mesh(wireFrontGeom, materials.metal_galva);
+      const wireBackTopMesh = new THREE.Mesh(wireBackTopGeom, materials.metal_galva);
+      const wireBackBotMesh = new THREE.Mesh(wireBackBotGeom, materials.metal_galva);
+      bailPivot.add(wireTopMesh, wireBotMesh, wireFrontMesh, wireBackTopMesh, wireBackBotMesh);
+
+      [
+        leverMesh,
+        thumbTabMesh,
+        wireTopMesh,
+        wireBotMesh,
+        wireFrontMesh,
+        wireBackTopMesh,
+        wireBackBotMesh
+      ].forEach((m) => {
+        m.userData = meshQ03.userData;
+        partMeshes.push(m);
+        solidMeshes.push(m);
+      });
+    }
 
     groups.hardware.add(meshQ03);
 
     // 2. Gâche plate (36 × 15 × 2 mm, 2 trous Ø 4 mm espacés de 20 mm) vissée à 90°
     //    sur la FACE EXTÉRIEURE du Côté Amovible P05 (X_cad = ±978 mm, Y_cad de ±212 à ±248 mm)
     const catchBaseMesh = new THREE.Mesh(geomCatchPlate, materials.metal_galva);
-    catchBaseMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geomCatchPlate, 25), materials.edge_line));
+    if (!isLite) {
+      catchBaseMesh.add(
+        new THREE.LineSegments(new THREE.EdgesGeometry(geomCatchPlate, 25), materials.edge_line)
+      );
+    }
 
     // Bec recourbé à 90° au bout de la gâche (à l'arête d'angle X=±977, Y=±250 mm) qui retient le fil Ø 3 mm de l'étrier
     const hookLipGeom = new THREE.BoxGeometry(5, 15, 6);
     hookLipGeom.rotateY(lc.dirX * outZ * 0.45);
     hookLipGeom.translate(-lc.dirX * 1.5, 0, outZ * 19.5);
     const catchHookMesh = new THREE.Mesh(hookLipGeom, materials.metal_galva);
-    catchHookMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(hookLipGeom, 25), materials.edge_line));
+    if (!isLite) {
+      catchHookMesh.add(
+        new THREE.LineSegments(new THREE.EdgesGeometry(hookLipGeom, 25), materials.edge_line)
+      );
+    }
 
     const catchCenterYCad = lc.face === 'front' ? -231 : 231; // s'étend de ±213 à ±249 mm sur la face extérieure de P05
     catchBaseMesh.position.copy(cadToThree(lc.dirX * 978, catchCenterYCad, lc.zCad));
@@ -753,7 +829,7 @@ export function buildSerreAssembly(materials) {
   // ==========================================================================
   // 6. SOCLE PLANTES À ROULETTES (DÉMO PASSAGE CÔTÉS AMOVIBLES)
   // ==========================================================================
-  buildPlantTrolleyDemo(groups.trolley, materials, solidMeshes);
+  buildPlantTrolleyDemo(groups.trolley, materials, solidMeshes, isLite);
 
   /**
    * Fonction de mise à jour cinématique :
@@ -894,18 +970,18 @@ export function buildSerreAssembly(materials) {
 /**
  * Construit un plateau à roulettes avec plantes (volumes fermés inclus dans Stencil pour coupe pleine)
  */
-function buildPlantTrolleyDemo(trolleyGroup, materials, solidMeshes) {
+function buildPlantTrolleyDemo(trolleyGroup, materials, solidMeshes, isLite = false) {
   // Plateau bois 1500 × 380 × 22 mm sur 4 roulettes
   const deckGeom = new THREE.BoxGeometry(1500, 22, 380);
   const deckMesh = new THREE.Mesh(deckGeom, materials.trolley_wood);
   deckMesh.position.copy(cadToThree(0, 0, 65));
-  deckMesh.castShadow = true;
-  deckMesh.receiveShadow = true;
+  deckMesh.castShadow = !isLite;
+  deckMesh.receiveShadow = !isLite;
   trolleyGroup.add(deckMesh);
   solidMeshes.push(deckMesh);
 
   // 4 Roulettes
-  const wheelGeom = new THREE.CylinderGeometry(24, 24, 18, 16);
+  const wheelGeom = new THREE.CylinderGeometry(24, 24, 18, isLite ? 8 : 16);
   wheelGeom.rotateZ(Math.PI / 2);
   const wheelPositions = [
     [-650, -140],
@@ -923,19 +999,19 @@ function buildPlantTrolleyDemo(trolleyGroup, materials, solidMeshes) {
   // 4 Pots en terre cuite + plantes stylisées (sans chevauchement pour coupe Stencil nette)
   const potXs = [-520, -180, 180, 520];
   potXs.forEach((px, i) => {
-    const potGeom = new THREE.CylinderGeometry(85, 62, 160, 18);
+    const potGeom = new THREE.CylinderGeometry(85, 62, 160, isLite ? 8 : 18);
     const potMesh = new THREE.Mesh(potGeom, materials.terracotta);
     potMesh.position.copy(cadToThree(px, 0, 156));
-    potMesh.castShadow = true;
+    potMesh.castShadow = !isLite;
     trolleyGroup.add(potMesh);
     solidMeshes.push(potMesh);
 
     const plantHeight = 220 + (i % 2) * 70;
-    const foliageGeom = new THREE.DodecahedronGeometry(88, 1);
+    const foliageGeom = new THREE.DodecahedronGeometry(88, isLite ? 0 : 1);
     foliageGeom.scale(0.9, plantHeight / 176, 0.9);
     const foliageMesh = new THREE.Mesh(foliageGeom, materials.plant_foliage);
     foliageMesh.position.copy(cadToThree(px, 0, 238 + plantHeight / 2));
-    foliageMesh.castShadow = true;
+    foliageMesh.castShadow = !isLite;
     trolleyGroup.add(foliageMesh);
     solidMeshes.push(foliageMesh);
   });

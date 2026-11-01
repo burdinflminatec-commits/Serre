@@ -90,7 +90,83 @@ function createPolycarbonateTexture() {
   return tex;
 }
 
-export function createMaterialsRegistry(clippingPlanes = []) {
+export function createMaterialsRegistry(clippingPlanes = [], isLite = false) {
+  if (isLite) {
+    // ============================================================================
+    // PROFIL D'OPTIMISATION MATÉRIELLE — SAMSUNG GALAXY TAB A (SM-T580 / Mali-T830)
+    // Zéro shader PBR (MeshStandard/Physical bannis), zéro texture bitmap,
+    // Gouraud shading (MeshLambertMaterial flatShading) & MeshBasicMaterial FrontSide
+    // ============================================================================
+    return {
+      wood_deck: new THREE.MeshLambertMaterial({
+        color: 0xc89666,
+        flatShading: true,
+        clippingPlanes
+      }),
+
+      wood_post: new THREE.MeshLambertMaterial({
+        color: 0xb07d4f,
+        flatShading: true,
+        clippingPlanes
+      }),
+
+      wood_to_buy: new THREE.MeshLambertMaterial({
+        color: 0xeab308,
+        flatShading: true,
+        clippingPlanes
+      }),
+
+      polycarbonate: new THREE.MeshBasicMaterial({
+        color: 0xd8f0ff,
+        transparent: true,
+        opacity: 0.25,
+        depthWrite: false, // CRITIQUE : Empêche le blocage du pipeline de tuiles sur la transparence
+        side: THREE.FrontSide, // Évite de calculer 2x chaque plaque (pas de DoubleSide)
+        clippingPlanes
+      }),
+
+      metal_galva: new THREE.MeshLambertMaterial({
+        color: 0xcbd5e1,
+        flatShading: true,
+        clippingPlanes
+      }),
+
+      metal_dark: new THREE.MeshLambertMaterial({
+        color: 0x334155,
+        flatShading: true,
+        clippingPlanes
+      }),
+
+      trolley_wood: new THREE.MeshLambertMaterial({
+        color: 0x855e3c,
+        flatShading: true,
+        clippingPlanes
+      }),
+
+      plant_foliage: new THREE.MeshLambertMaterial({
+        color: 0x2d8a4e,
+        flatShading: true,
+        clippingPlanes
+      }),
+
+      terracotta: new THREE.MeshLambertMaterial({
+        color: 0xb4532a,
+        flatShading: true,
+        clippingPlanes
+      }),
+
+      edge_line: new THREE.LineBasicMaterial({
+        color: 0x557799,
+        clippingPlanes
+      }),
+
+      edge_poly: new THREE.LineBasicMaterial({
+        color: 0x38bdf8,
+        clippingPlanes
+      })
+    };
+  }
+
   const deckTex = createWoodTexture({
     baseColor: '#bf9460',
     grainColor: '#85582a',

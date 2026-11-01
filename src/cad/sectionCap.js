@@ -8,9 +8,10 @@ import * as THREE from 'three';
  * - Axe Z = Hauteur (three.y = Z_cad)
  */
 export class SectionCapManager {
-  constructor(scene, solidMeshes) {
+  constructor(scene, solidMeshes, isLite = false) {
     this.scene = scene;
     this.solidMeshes = solidMeshes;
+    this.isLite = isLite;
 
     this.active = false;
     this.axis = 'X'; // 'X' | 'Y' | 'Z'
@@ -32,71 +33,73 @@ export class SectionCapManager {
   }
 
   _initStencilMeshes() {
-    // Passe 1 : BackSide -> IncrementWrap (AVEC clippingPlane actif !)
-    const backStencilMat = new THREE.MeshBasicMaterial({
-      depthWrite: false,
-      depthTest: false,
-      colorWrite: false,
-      side: THREE.BackSide,
-      clippingPlanes: [this.clippingPlane],
-      stencilWrite: true,
-      stencilFunc: THREE.AlwaysStencilFunc,
-      stencilFail: THREE.KeepStencilOp,
-      stencilZFail: THREE.KeepStencilOp,
-      stencilZPass: THREE.IncrementWrapStencilOp
-    });
+    if (!this.isLite) {
+      // Passe 1 : BackSide -> IncrementWrap (AVEC clippingPlane actif !)
+      const backStencilMat = new THREE.MeshBasicMaterial({
+        depthWrite: false,
+        depthTest: false,
+        colorWrite: false,
+        side: THREE.BackSide,
+        clippingPlanes: [this.clippingPlane],
+        stencilWrite: true,
+        stencilFunc: THREE.AlwaysStencilFunc,
+        stencilFail: THREE.KeepStencilOp,
+        stencilZFail: THREE.KeepStencilOp,
+        stencilZPass: THREE.IncrementWrapStencilOp
+      });
 
-    // Passe 2 : FrontSide -> DecrementWrap (AVEC clippingPlane actif !)
-    const frontStencilMat = new THREE.MeshBasicMaterial({
-      depthWrite: false,
-      depthTest: false,
-      colorWrite: false,
-      side: THREE.FrontSide,
-      clippingPlanes: [this.clippingPlane],
-      stencilWrite: true,
-      stencilFunc: THREE.AlwaysStencilFunc,
-      stencilFail: THREE.KeepStencilOp,
-      stencilZFail: THREE.KeepStencilOp,
-      stencilZPass: THREE.DecrementWrapStencilOp
-    });
+      // Passe 2 : FrontSide -> DecrementWrap (AVEC clippingPlane actif !)
+      const frontStencilMat = new THREE.MeshBasicMaterial({
+        depthWrite: false,
+        depthTest: false,
+        colorWrite: false,
+        side: THREE.FrontSide,
+        clippingPlanes: [this.clippingPlane],
+        stencilWrite: true,
+        stencilFunc: THREE.AlwaysStencilFunc,
+        stencilFail: THREE.KeepStencilOp,
+        stencilZFail: THREE.KeepStencilOp,
+        stencilZPass: THREE.DecrementWrapStencilOp
+      });
 
-    this.solidMeshes.forEach((sourceMesh) => {
-      const mBack = new THREE.Mesh(sourceMesh.geometry, backStencilMat);
-      const mFront = new THREE.Mesh(sourceMesh.geometry, frontStencilMat);
-      mBack.renderOrder = 1;
-      mFront.renderOrder = 1;
-      mBack.matrixAutoUpdate = false;
-      mFront.matrixAutoUpdate = false;
-      mBack.frustumCulled = false;
-      mFront.frustumCulled = false;
-      this.stencilGroup.add(mBack);
-      this.stencilGroup.add(mFront);
-      this.stencilEntries.push({ sourceMesh, mBack, mFront });
-    });
+      this.solidMeshes.forEach((sourceMesh) => {
+        const mBack = new THREE.Mesh(sourceMesh.geometry, backStencilMat);
+        const mFront = new THREE.Mesh(sourceMesh.geometry, frontStencilMat);
+        mBack.renderOrder = 1;
+        mFront.renderOrder = 1;
+        mBack.matrixAutoUpdate = false;
+        mFront.matrixAutoUpdate = false;
+        mBack.frustumCulled = false;
+        mFront.frustumCulled = false;
+        this.stencilGroup.add(mBack);
+        this.stencilGroup.add(mFront);
+        this.stencilEntries.push({ sourceMesh, mBack, mFront });
+      });
 
-    // Plan de bouchage (Tranche pleine opaque là où stencil != 0)
-    const capGeom = new THREE.PlaneGeometry(5000, 5000);
-    const capMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#7c8ea3'),
-      roughness: 0.55,
-      metalness: 0.1,
-      side: THREE.DoubleSide,
-      polygonOffset: true,
-      polygonOffsetFactor: -1,
-      polygonOffsetUnits: -1,
-      stencilWrite: true,
-      stencilRef: 0,
-      stencilFunc: THREE.NotEqualStencilFunc,
-      stencilFail: THREE.ReplaceStencilOp,
-      stencilZFail: THREE.ReplaceStencilOp,
-      stencilZPass: THREE.ReplaceStencilOp
-    });
+      // Plan de bouchage (Tranche pleine opaque là où stencil != 0)
+      const capGeom = new THREE.PlaneGeometry(5000, 5000);
+      const capMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color('#7c8ea3'),
+        roughness: 0.55,
+        metalness: 0.1,
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
+        stencilWrite: true,
+        stencilRef: 0,
+        stencilFunc: THREE.NotEqualStencilFunc,
+        stencilFail: THREE.ReplaceStencilOp,
+        stencilZFail: THREE.ReplaceStencilOp,
+        stencilZPass: THREE.ReplaceStencilOp
+      });
 
-    this.capMesh = new THREE.Mesh(capGeom, capMat);
-    this.capMesh.renderOrder = 2;
-    this.capMesh.frustumCulled = false;
-    this.capMesh.visible = false;
-    this.scene.add(this.capMesh);
+      this.capMesh = new THREE.Mesh(capGeom, capMat);
+      this.capMesh.renderOrder = 2;
+      this.capMesh.frustumCulled = false;
+      this.capMesh.visible = false;
+      this.scene.add(this.capMesh);
+    }
 
     // Cadre visuel interactif du plan de coupe (cliquable pour tirer/pousser le plan en 3D)
     const frameW = 2250;
@@ -158,14 +161,16 @@ export class SectionCapManager {
   syncTransforms() {
     if (!this.active) {
       this.stencilGroup.visible = false;
-      this.capMesh.visible = false;
+      if (this.capMesh) this.capMesh.visible = false;
       this.helperOutline.visible = false;
       return;
     }
 
-    this.stencilGroup.visible = true;
-    this.capMesh.visible = true;
     this.helperOutline.visible = true;
+    if (this.isLite) return;
+
+    this.stencilGroup.visible = true;
+    if (this.capMesh) this.capMesh.visible = true;
 
     for (let i = 0; i < this.stencilEntries.length; i++) {
       const { sourceMesh, mBack, mFront } = this.stencilEntries[i];
@@ -211,7 +216,7 @@ export class SectionCapManager {
       // Déplacer le plan très loin pour ne rien couper quand inactif
       this.clippingPlane.normal.set(0, -1, 0);
       this.clippingPlane.constant = 999999;
-      this.capMesh.visible = false;
+      if (this.capMesh) this.capMesh.visible = false;
       this.helperOutline.visible = false;
       this.stencilGroup.visible = false;
       return;
@@ -250,8 +255,10 @@ export class SectionCapManager {
       planePoint.z = 0;
     }
 
-    this.capMesh.position.copy(planePoint);
-    this.capMesh.lookAt(planePoint.clone().add(this.clippingPlane.normal));
+    if (this.capMesh) {
+      this.capMesh.position.copy(planePoint);
+      this.capMesh.lookAt(planePoint.clone().add(this.clippingPlane.normal));
+    }
 
     this.helperOutline.position.copy(planePoint);
     this.helperOutline.lookAt(planePoint.clone().add(this.clippingPlane.normal));

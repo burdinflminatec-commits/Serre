@@ -1182,6 +1182,91 @@ input[type="range"] {
   height: 15px;
 }
 
+/* ============================================================================
+   PROFIL D'OPTIMISATION MATÉRIELLE — SAMSUNG GALAXY TAB A (SM-T580 / Mali-T830)
+   - BANNIR : backdrop-filter: blur(...) et box-shadow complexes
+   - BANNIR : panneaux HTML semi-transparents (rgba) flottant sur la 3D
+   - PRIVILÉGIER : grille CSS côte-à-côte avec canvas d'un côté et panneaux opaques de l'autre
+   ============================================================================ */
+body.lite-mode *,
+body.lite-mode *::before,
+body.lite-mode *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+body.lite-mode .top-bar {
+  background: #0d121a;
+}
+
+body.lite-mode .workspace {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+body.lite-mode .viewport-container {
+  position: relative;
+  inset: auto;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+body.lite-mode .piece-inspector {
+  position: relative;
+  top: auto;
+  left: auto;
+  bottom: auto;
+  width: 340px;
+  height: 100%;
+  background: #111823;
+  border: none;
+  border-right: 1px solid #263244;
+  border-radius: 0;
+  order: -1;
+  transform: none;
+  transition: none;
+}
+
+body.lite-mode .piece-inspector.collapsed {
+  display: none;
+}
+
+body.lite-mode .control-panel {
+  position: relative;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  width: 300px;
+  height: 100%;
+  background: #111823;
+  border: none;
+  border-left: 1px solid #263244;
+  border-radius: 0;
+}
+
+body.lite-mode .hud-pill,
+body.lite-mode .hud-coords,
+body.lite-mode .measure-badge-3d,
+body.lite-mode .measurement-tooltip,
+body.lite-mode .mech-control,
+body.lite-mode .action-btn,
+body.lite-mode .view-btn,
+body.lite-mode .mini-btn,
+body.lite-mode .toggle-btn,
+body.lite-mode .pin-card,
+body.lite-mode .modal-backdrop {
+  background-color: #151e2c;
+}
+
+body.lite-mode .action-btn.lite-active {
+  background: #166534;
+  border-color: #22c55e;
+  color: #dcfce7;
+}
+
 /* MODE IMPRESSION ATELIER A4 PAYSAGE */
 .print-only {
   display: none;

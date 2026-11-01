@@ -19,7 +19,8 @@ export class MeasurementTool {
     listContainer,
     partMeshes,
     sectionManager,
-    onStateChange
+    onStateChange,
+    onRequestRender
   }) {
     this.scene = scene;
     this.camera = camera;
@@ -30,6 +31,7 @@ export class MeasurementTool {
     this.partMeshes = partMeshes;
     this.sectionManager = sectionManager;
     this.onStateChange = onStateChange || (() => {});
+    this.onRequestRender = onRequestRender || (() => {});
 
     this.enabled = false;
     this.xrayPolycarbonate = false;
@@ -156,6 +158,7 @@ export class MeasurementTool {
     this.globalDimBadges.forEach((b) => {
       b.badge.style.display = visible ? 'inline-flex' : 'none';
     });
+    this.onRequestRender();
   }
 
   setEnabled(flag) {
@@ -167,6 +170,7 @@ export class MeasurementTool {
     }
     this.domElement.style.cursor = this.enabled ? 'crosshair' : 'default';
     this.onStateChange(this.enabled);
+    this.onRequestRender();
   }
 
   toggle() {
@@ -178,6 +182,7 @@ export class MeasurementTool {
     this.markerAMesh.visible = false;
     this.previewLine.visible = false;
     this.tooltipEl.classList.add('hidden');
+    this.onRequestRender();
   }
 
   _bindEvents() {
@@ -431,6 +436,7 @@ export class MeasurementTool {
     if (!target) {
       this.cursorMesh.visible = false;
       if (!this.pointA) this.tooltipEl.classList.add('hidden');
+      this.onRequestRender();
       return;
     }
 
@@ -473,6 +479,7 @@ export class MeasurementTool {
       `;
       this.tooltipEl.classList.remove('hidden');
     }
+    this.onRequestRender();
   }
 
   _onLeftClick(e) {
@@ -483,6 +490,7 @@ export class MeasurementTool {
       this.pointA = target.point.clone();
       this.markerAMesh.position.copy(this.pointA);
       this.markerAMesh.visible = true;
+      this.onRequestRender();
     } else {
       const pointB = target.point.clone();
       if (this.pointA.distanceTo(pointB) > 0.5) {
@@ -560,6 +568,7 @@ export class MeasurementTool {
 
     this._renderMeasurementsList();
     this.updateLabelsProjection();
+    this.onRequestRender();
   }
 
   removeMeasurement(id) {
@@ -570,6 +579,7 @@ export class MeasurementTool {
     item.badgeEl.remove();
     this.measurements.splice(idx, 1);
     this._renderMeasurementsList();
+    this.onRequestRender();
   }
 
   clearAll() {
@@ -580,6 +590,7 @@ export class MeasurementTool {
     this.measurements = [];
     this.cancelCurrentPointA();
     this._renderMeasurementsList();
+    this.onRequestRender();
   }
 
   _renderMeasurementsList() {

@@ -130,24 +130,88 @@ document.getElementById('btn-top-lock')?.addEventListener('click', () => {
 checkSavedPinSession();
 
 // ============================================================================
+// DÉTECTION & BASCULE DU PROFIL TABLETTE LITE (SAMSUNG GALAXY TAB A SM-T580)
+// SoC : Exynos 7870 | GPU : Mali-T830 MP1 (1 cœur) | RAM : 2 Go
+// ============================================================================
+const PERF_STORAGE_KEY = 'serre_cad_perf_mode_v1';
+const urlParams = new URLSearchParams(window.location.search);
+const savedPerfMode = (() => {
+  try {
+    return localStorage.getItem(PERF_STORAGE_KEY);
+  } catch (_) {
+    return null;
+  }
+})();
+
+const isMobileOrTabletUA = /Android|SM-T580|Tablet|Mobile|iPad|iPhone/i.test(
+  navigator.userAgent || ''
+);
+
+const isLiteMode = Boolean(
+  window.FORCE_LITE_MODE === true ||
+    urlParams.get('lite') === '1' ||
+    savedPerfMode === 'lite' ||
+    (savedPerfMode !== 'hd' && isMobileOrTabletUA)
+);
+
+document.body.classList.toggle('lite-mode', isLiteMode);
+
+const btnTopPerf = document.getElementById('btn-top-perf');
+if (btnTopPerf) {
+  if (isLiteMode) {
+    btnTopPerf.textContent = '⚡ Mode Tab A Lite (Actif)';
+    btnTopPerf.classList.add('lite-active');
+    btnTopPerf.title = 'Profil Mali-T830 actif — Cliquez pour passer en Mode PC HD';
+  } else {
+    btnTopPerf.textContent = '⚡ Mode Tab A Lite';
+    btnTopPerf.classList.remove('lite-active');
+    btnTopPerf.title = 'Cliquez pour activer le Mode Tab A Lite (optimisé tablette SM-T580)';
+  }
+
+  btnTopPerf.addEventListener('click', () => {
+    const nextMode = isLiteMode ? 'hd' : 'lite';
+    try {
+      localStorage.setItem(PERF_STORAGE_KEY, nextMode);
+    } catch (_) {}
+    const url = new URL(window.location.href);
+    if (nextMode === 'lite') {
+      url.searchParams.set('lite', '1');
+    } else {
+      url.searchParams.delete('lite');
+      if (url.pathname.endsWith('/lite.html')) {
+        url.pathname = url.pathname.replace(/\/lite\.html$/, '/index.html');
+      }
+    }
+    window.location.href = url.toString();
+  });
+}
+
+// ============================================================================
 // INITIALISATION DU BUREAU D'ÉTUDES & ATELIER CAD 3D
 // ============================================================================
 
 const canvas = document.getElementById('three-canvas');
 const viewportContainer = document.getElementById('viewport-container');
 
+// 1. CONFIGURATION DU RENDERER (En mode Lite : réduction du Fill-Rate de 60 à 70 %)
 const renderer = new THREE.WebGLRenderer({
   canvas,
-  antialias: true,
-  stencil: true,
-  powerPreference: 'high-performance'
+  antialias: !isLiteMode, // OBLIGATOIRE sur Mali-T830 : pas de MSAA
+  powerPreference: 'high-performance',
+  alpha: false, // Évite le compositing transparent avec le DOM HTML derrière
+  stencil: !isLiteMode, // Économise la bande passante mémoire en mode Lite
+  depth: true
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+// En mode Lite : 0.8 permet de calculer en ~1024×640 au lieu de 1920×1200 (DPR 1.5 banni)
+renderer.setPixelRatio(isLiteMode ? 0.8 : Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = !isLiteMode;
+if (!isLiteMode) {
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
+}
 renderer.localClippingEnabled = true;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.08;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#0d131c');
@@ -157,14 +221,15 @@ camera.position.set(1850, 1650, 2150);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 560, 0);
-controls.enableDamping = true;
+// En mode Lite : désactiver l'inertie (damping) pour stopper immédiatement les frames au lâcher du doigt
+controls.enableDamping = !isLiteMode;
 controls.dampingFactor = 0.08;
 controls.maxDistance = 9500;
 controls.minDistance = 200;
 controls.update();
 
 // Éclairage Atelier CAD
-const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.85);
+const ambientLight = new THREE.AmbientLight(0xdbeafe, isLiteMode ? 0.95 : 0.85);
 scene.add(ambientLight);
 
 const hemiLight = new THREE.HemisphereLight(0xf8fafc, 0x1e293b, 0.65);
@@ -173,16 +238,18 @@ scene.add(hemiLight);
 
 const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.35);
 dirLight.position.set(1800, 2900, 2100);
-dirLight.castShadow = true;
-dirLight.shadow.mapSize.set(2048, 2048);
-dirLight.shadow.camera.near = 200;
-dirLight.shadow.camera.far = 7500;
-const d = 1750;
-dirLight.shadow.camera.left = -d;
-dirLight.shadow.camera.right = d;
-dirLight.shadow.camera.top = d;
-dirLight.shadow.camera.bottom = -d;
-dirLight.shadow.bias = -0.0005;
+if (!isLiteMode) {
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.set(2048, 2048);
+  dirLight.shadow.camera.near = 200;
+  dirLight.shadow.camera.far = 7500;
+  const d = 1750;
+  dirLight.shadow.camera.left = -d;
+  dirLight.shadow.camera.right = d;
+  dirLight.shadow.camera.top = d;
+  dirLight.shadow.camera.bottom = -d;
+  dirLight.shadow.bias = -0.0005;
+}
 scene.add(dirLight);
 
 const backLight = new THREE.DirectionalLight(0x93c5fd, 0.55);
@@ -190,7 +257,12 @@ backLight.position.set(-1600, 1400, -1900);
 scene.add(backLight);
 
 // Grille technique au sol (Z_cad = 0 -> three.y = 0) élargie pour le roulage des plantes
-const gridMajor = new THREE.GridHelper(7600, 76, 0x38bdf8, 0x1e293b);
+const gridMajor = new THREE.GridHelper(
+  7600,
+  isLiteMode ? 38 : 76,
+  0x38bdf8,
+  0x1e293b
+);
 gridMajor.position.y = -0.5;
 scene.add(gridMajor);
 
@@ -204,16 +276,28 @@ axesGroup.add(arrowX, arrowY, arrowZ);
 scene.add(axesGroup);
 
 // ============================================================================
-// CONSTRUCTION DE LA SERRE & COUPE STENCIL
+// BOUCLE DE RENDU À LA DEMANDE (Zéro charge CPU/GPU au repos sur Exynos 7870)
+// ============================================================================
+let renderRequested = false;
+
+function requestRenderIfNotRequested() {
+  if (!renderRequested) {
+    renderRequested = true;
+    requestAnimationFrame(render);
+  }
+}
+
+// ============================================================================
+// CONSTRUCTION DE LA SERRE & COUPE DYNAMIQUE
 // ============================================================================
 
 // Initialiser avec un plan de coupe partagé
 const tempClipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 999999);
-const materials = createMaterialsRegistry([tempClipPlane]);
-const serre = buildSerreAssembly(materials);
+const materials = createMaterialsRegistry([tempClipPlane], isLiteMode);
+const serre = buildSerreAssembly(materials, isLiteMode);
 scene.add(serre.rootGroup);
 
-const sectionManager = new SectionCapManager(scene, serre.solidMeshes);
+const sectionManager = new SectionCapManager(scene, serre.solidMeshes, isLiteMode);
 // Connecter le clippingPlane du SectionCapManager à tous les matériaux
 Object.values(materials).forEach((mat) => {
   if (mat.clippingPlanes) {
@@ -241,7 +325,8 @@ const measurementTool = new MeasurementTool({
     btnTopMeasure.classList.toggle('active', active);
     btnPanelMeasure.classList.toggle('active', active);
     btnPanelMeasure.textContent = active ? 'Mesure Active (Échap/M)' : 'Activer Mesure (M)';
-  }
+  },
+  onRequestRender: requestRenderIfNotRequested
 });
 
 // ============================================================================
@@ -291,13 +376,18 @@ function selectPartByMesh(mesh) {
   inspQty.textContent = `×${part.qty}`;
 
   renderPieceInspector2D(selectedPartId, inspSvgContainer);
+  const wasCollapsed = inspectorAside.classList.contains('collapsed');
   inspectorAside.classList.remove('collapsed');
+  if (isLiteMode && wasCollapsed) {
+    onResize();
+  }
 
   hudSelection.innerHTML = `Sélection : <strong style="color:#fde68a;">${mesh.userData.instanceId}</strong> — ${part.name} (${part.length}×${part.width}×${part.thickness} mm)`;
 
   if (isIsolated) {
     applyIsolation(true);
   }
+  requestRenderIfNotRequested();
 }
 
 function selectPartById(partId) {
@@ -311,11 +401,16 @@ function clearSelection() {
   selectedMesh = null;
   selectedPartId = null;
   selectionBox.visible = false;
+  const wasOpen = !inspectorAside.classList.contains('collapsed');
   inspectorAside.classList.add('collapsed');
+  if (isLiteMode && wasOpen) {
+    onResize();
+  }
   hudSelection.textContent = 'Aucune pièce sélectionnée (Cliquez sur une pièce en 3D)';
   if (isIsolated) {
     applyIsolation(false);
   }
+  requestRenderIfNotRequested();
 }
 
 function applyIsolation(enable) {
@@ -331,6 +426,7 @@ function applyIsolation(enable) {
     }
   });
   sectionManager.syncTransforms();
+  requestRenderIfNotRequested();
 }
 
 function centerCameraOnSelected() {
@@ -346,6 +442,7 @@ function centerCameraOnSelected() {
   controls.target.copy(center);
   camera.position.copy(center).addScaledVector(dir, maxDim * 2.1);
   controls.update();
+  requestRenderIfNotRequested();
 }
 
 // ============================================================================
@@ -593,18 +690,20 @@ window.addEventListener('pointermove', (e) => {
         sectionManager.setConfig({ positionMm: newPos });
         sectionManager.syncTransforms();
         hudSelection.innerHTML = `🔪 Plan de Coupe (${sectionManager.axis}) : <strong style="color:#38bdf8;">${newPos} mm</strong>`;
+        requestRenderIfNotRequested();
       }
     }
     return;
   }
 
-  // Changement du curseur en "grab" au survol d'un élément mobile ou du plan de coupe actif
-  if (e.target === renderer.domElement) {
+  // En mode Lite (tablette tactile SM-T580), éviter le raycast de survol inutile à chaque mouvement
+  if (!isLiteMode && e.target === renderer.domElement) {
     const secHover = raycastSectionPlane(e.clientX, e.clientY);
     const hoverHit = raycastVisibleScene(e.clientX, e.clientY);
     const mechType = hoverHit ? getMovableMechanismType(hoverHit.object) : null;
     sectionManager.setHighlight(Boolean(secHover));
     renderer.domElement.style.cursor = mechType || secHover ? 'grab' : 'default';
+    requestRenderIfNotRequested();
   }
 });
 
@@ -618,6 +717,7 @@ window.addEventListener('pointerup', (e) => {
     renderer.domElement.style.cursor = 'grab';
     dragTarget = null;
     dragStart = null;
+    requestRenderIfNotRequested();
     if (wasMoved) return;
   }
 
@@ -677,6 +777,7 @@ document.querySelectorAll('input[data-group]').forEach((chk) => {
       serre.groups[grp].visible = visible;
     }
     sectionManager.syncTransforms();
+    requestRenderIfNotRequested();
   });
 });
 
@@ -712,6 +813,7 @@ function applyKinematicsState() {
     selectionBox.setFromObject(selectedMesh);
   }
   sectionManager.syncTransforms();
+  requestRenderIfNotRequested();
 }
 
 sliderVentAngle.addEventListener('input', (e) => {
@@ -791,6 +893,7 @@ chkSectionActive.addEventListener('change', (e) => {
   sliderSectionPos.disabled = !active;
   sectionManager.setConfig({ active });
   sectionManager.syncTransforms();
+  requestRenderIfNotRequested();
 });
 
 axisBtns.forEach((btn) => {
@@ -805,12 +908,14 @@ axisBtns.forEach((btn) => {
     valSectionPos.textContent = `${bounds.defaultPos} mm`;
     sectionManager.setConfig({ axis, positionMm: bounds.defaultPos });
     sectionManager.syncTransforms();
+    requestRenderIfNotRequested();
   });
 });
 
 btnSectionFlip.addEventListener('click', () => {
   sectionManager.setConfig({ flipped: !sectionManager.flipped });
   sectionManager.syncTransforms();
+  requestRenderIfNotRequested();
 });
 
 sliderSectionPos.addEventListener('input', (e) => {
@@ -818,6 +923,7 @@ sliderSectionPos.addEventListener('input', (e) => {
   valSectionPos.textContent = `${pos} mm`;
   sectionManager.setConfig({ positionMm: pos });
   sectionManager.syncTransforms();
+  requestRenderIfNotRequested();
 });
 
 // Vues Normalisées (Repère métier X=Largeur, Y=Profondeur, Z=Hauteur)
@@ -863,6 +969,7 @@ document.querySelectorAll('.view-btn').forEach((btn) => {
       applyKinematicsState();
     }
     controls.update();
+    requestRenderIfNotRequested();
   });
 });
 
@@ -936,23 +1043,23 @@ renderCutlistModal({
 });
 
 // ============================================================================
-// REDIMENSIONNEMENT & BOUCLE DE RENDU
+// REDIMENSIONNEMENT & BOUCLE DE RENDU À LA DEMANDE (Zéro charge CPU/GPU au repos)
 // ============================================================================
 
 function onResize() {
-  const w = viewportContainer.clientWidth;
-  const h = viewportContainer.clientHeight;
+  const w = Math.max(1, viewportContainer.clientWidth);
+  const h = Math.max(1, viewportContainer.clientHeight);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
+  requestRenderIfNotRequested();
 }
 
-window.addEventListener('resize', onResize);
-onResize();
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
+function render() {
+  renderRequested = false;
+  if (controls.enableDamping) {
+    controls.update();
+  }
   if (sectionManager.active) {
     sectionManager.syncTransforms();
   }
@@ -960,4 +1067,9 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-animate();
+// Déclencher un rendu uniquement quand on tourne la caméra ou redimensionne
+controls.addEventListener('change', requestRenderIfNotRequested);
+window.addEventListener('resize', onResize);
+
+onResize();
+requestRenderIfNotRequested();
