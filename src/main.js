@@ -250,24 +250,35 @@ window.addEventListener('keydown', (e) => {
 const canvas = document.getElementById('three-canvas');
 const viewportContainer = document.getElementById('viewport-container');
 
-// 1. CONFIGURATION DU RENDERER (En mode Lite : réduction du Fill-Rate de 60 à 70 %)
+// 1. CONFIGURATION DU RENDERER — Rendu Progressif Dynamique -> Statique HD (Style VLG Viewer)
 const renderer = new THREE.WebGLRenderer({
   canvas,
-  antialias: !isLiteMode, // OBLIGATOIRE sur Mali-T830 : pas de MSAA
+  antialias: true, // MSAA matériel actif pour éliminer l'effet d'escalier (aliasing)
   powerPreference: 'high-performance',
-  alpha: false, // Évite le compositing transparent avec le DOM HTML derrière
-  stencil: true, // Permet d'afficher les tranches pleines lors d'une Coupe 3D (coût nul quand la coupe est inactive)
+  alpha: false,
+  stencil: true, // Tranches pleines lors d'une Coupe 3D
   depth: true
 });
 
-// En mode Lite : 0.8 permet de calculer en ~1024×640 au lieu de 1920×1200 (DPR 1.5 banni)
-renderer.setPixelRatio(isLiteMode ? 0.8 : Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = !isLiteMode;
-if (!isLiteMode) {
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.08;
-}
+const nativeDpr = window.devicePixelRatio || 1;
+// Pendant le mouvement : résolution allégée pour garantir 60 FPS fluides au doigt
+const MOTION_PIXEL_RATIO = isLiteMode
+  ? Math.min(nativeDpr * 0.65, 0.95)
+  : Math.min(nativeDpr, 1.25);
+// À l'arrêt (vue statique) : supersampling haute définition pour une netteté maximale sans aliasing
+const STATIC_PIXEL_RATIO = isLiteMode
+  ? Math.min(nativeDpr * 1.25, 1.85)
+  : Math.min(nativeDpr * 1.4, 2.25);
+
+let currentPixelRatio = STATIC_PIXEL_RATIO;
+renderer.setPixelRatio(currentPixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// Ne pas recalculer la shadowMap à chaque frame de mouvement (0 coût pendant l'interaction, recalculée à l'arrêt)
+renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.needsUpdate = true;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.06;
 renderer.localClippingEnabled = true;
 
 const scene = new THREE.Scene();
@@ -278,7 +289,7 @@ camera.position.set(1850, 1650, 2150);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 560, 0);
-// En mode Lite : désactiver l'inertie (damping) pour stopper immédiatement les frames au lâcher du doigt
+// En mode Lite : désactiver l'inertie (damping) pour déclencher immédiatement le raffinement HD au lâcher du doigt
 controls.enableDamping = !isLiteMode;
 controls.dampingFactor = 0.08;
 controls.maxDistance = 9500;
@@ -286,7 +297,7 @@ controls.minDistance = 200;
 controls.update();
 
 // Éclairage Atelier CAD
-const ambientLight = new THREE.AmbientLight(0xdbeafe, isLiteMode ? 0.95 : 0.85);
+const ambientLight = new THREE.AmbientLight(0xdbeafe, isLiteMode ? 0.9 : 0.85);
 scene.add(ambientLight);
 
 const hemiLight = new THREE.HemisphereLight(0xf8fafc, 0x1e293b, 0.65);
@@ -295,18 +306,17 @@ scene.add(hemiLight);
 
 const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.35);
 dirLight.position.set(1800, 2900, 2100);
-if (!isLiteMode) {
-  dirLight.castShadow = true;
-  dirLight.shadow.mapSize.set(2048, 2048);
-  dirLight.shadow.camera.near = 200;
-  dirLight.shadow.camera.far = 7500;
-  const d = 1750;
-  dirLight.shadow.camera.left = -d;
-  dirLight.shadow.camera.right = d;
-  dirLight.shadow.camera.top = d;
-  dirLight.shadow.camera.bottom = -d;
-  dirLight.shadow.bias = -0.0005;
-}
+dirLight.castShadow = true;
+const shadowRes = isLiteMode ? 1024 : 2048;
+dirLight.shadow.mapSize.set(shadowRes, shadowRes);
+dirLight.shadow.camera.near = 200;
+dirLight.shadow.camera.far = 7500;
+const d = 1750;
+dirLight.shadow.camera.left = -d;
+dirLight.shadow.camera.right = d;
+dirLight.shadow.camera.top = d;
+dirLight.shadow.camera.bottom = -d;
+dirLight.shadow.bias = -0.0005;
 scene.add(dirLight);
 
 const backLight = new THREE.DirectionalLight(0x93c5fd, 0.55);
@@ -333,11 +343,28 @@ axesGroup.add(arrowX, arrowY, arrowZ);
 scene.add(axesGroup);
 
 // ============================================================================
-// BOUCLE DE RENDU À LA DEMANDE (Zéro charge CPU/GPU au repos sur Exynos 7870)
+// BOUCLE DE RENDU À LA DEMANDE + RAFFINEMENT STATIQUE HD (Style VLG Viewer)
+// - En mouvement : résolution allégée (MOTION_PIXEL_RATIO) sans recalcul d'ombres -> 60 FPS
+// - À l'arrêt (150 ms après le dernier geste) : passe unique en haute résolution (STATIC_PIXEL_RATIO) + ombres douces
 // ============================================================================
 let renderRequested = false;
+let staticRefineTimer = null;
+let isStaticPass = false;
 
 function requestRenderIfNotRequested() {
+  isStaticPass = false;
+  if (staticRefineTimer) {
+    clearTimeout(staticRefineTimer);
+  }
+  staticRefineTimer = setTimeout(() => {
+    staticRefineTimer = null;
+    isStaticPass = true;
+    if (!renderRequested) {
+      renderRequested = true;
+      requestAnimationFrame(render);
+    }
+  }, 150);
+
   if (!renderRequested) {
     renderRequested = true;
     requestAnimationFrame(render);
@@ -1071,12 +1098,38 @@ function onResize() {
   const h = Math.max(1, viewportContainer.clientHeight);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
+  renderer.setSize(w, h, false);
   requestRenderIfNotRequested();
 }
 
 function render() {
   renderRequested = false;
+
+  const targetPixelRatio = isStaticPass ? STATIC_PIXEL_RATIO : MOTION_PIXEL_RATIO;
+  if (currentPixelRatio !== targetPixelRatio) {
+    currentPixelRatio = targetPixelRatio;
+    const w = Math.max(1, viewportContainer.clientWidth);
+    const h = Math.max(1, viewportContainer.clientHeight);
+    renderer.setPixelRatio(currentPixelRatio);
+    renderer.setSize(w, h, false);
+  }
+
+  // Adoucir les arêtes 1px pendant le mouvement pour éviter tout scintillement, et les affiner à l'arrêt
+  if (materials.edge_line) {
+    materials.edge_line.opacity = isStaticPass
+      ? isLiteMode
+        ? 0.48
+        : 0.62
+      : isLiteMode
+      ? 0.3
+      : 0.45;
+  }
+
+  // Recalculer la carte d'ombres uniquement sur la frame statique de stabilisation (0 coût pendant les gestes)
+  if (isStaticPass) {
+    renderer.shadowMap.needsUpdate = true;
+  }
+
   if (controls.enableDamping) {
     controls.update();
   }

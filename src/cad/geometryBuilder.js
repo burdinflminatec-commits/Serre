@@ -22,10 +22,6 @@ export function threeToCad(vec3) {
  * Centrée en X: [-L/2, +L/2], Y: [-W/2, +W/2], Z: [-T/2, +T/2]
  */
 function createExtrudedBoardGeometry(length, width, thickness, holes = [], isLite = false) {
-  if (isLite || !holes || holes.length === 0) {
-    return new THREE.BoxGeometry(length, width, thickness);
-  }
-
   const shape = new THREE.Shape();
   const hw = length / 2;
   const hh = width / 2;
@@ -36,18 +32,20 @@ function createExtrudedBoardGeometry(length, width, thickness, holes = [], isLit
   shape.lineTo(-hw, hh);
   shape.closePath();
 
-  holes.forEach((h) => {
-    const holePath = new THREE.Path();
-    const hx = -hw + h.x;
-    const hy = -hh + h.y;
-    holePath.absarc(hx, hy, h.d / 2, 0, Math.PI * 2, false);
-    shape.holes.push(holePath);
-  });
+  if (holes && holes.length > 0) {
+    holes.forEach((h) => {
+      const holePath = new THREE.Path();
+      const hx = -hw + h.x;
+      const hy = -hh + h.y;
+      holePath.absarc(hx, hy, h.d / 2, 0, Math.PI * 2, false);
+      shape.holes.push(holePath);
+    });
+  }
 
   const geom = new THREE.ExtrudeGeometry(shape, {
     depth: thickness,
     bevelEnabled: false,
-    curveSegments: 14
+    curveSegments: isLite ? 8 : 14
   });
 
   // Centrer l'extrusion sur l'épaisseur Z
@@ -109,7 +107,7 @@ function createSlopedGableBoardGeometry(lengthY, maxHeightZ, thicknessX, holes =
   shape.lineTo(hy, maxHeightZ);
   shape.closePath();
 
-  if (!isLite && holes && holes.length > 0) {
+  if (holes && holes.length > 0) {
     holes.forEach((h) => {
       const hx = hy - h.x;
       const hyHole = h.y;
@@ -126,7 +124,7 @@ function createSlopedGableBoardGeometry(lengthY, maxHeightZ, thicknessX, holes =
   const geom = new THREE.ExtrudeGeometry(shape, {
     depth: thicknessX,
     bevelEnabled: false,
-    curveSegments: isLite ? 6 : 12
+    curveSegments: isLite ? 8 : 12
   });
 
   // Réaligner vers Three.js : x = X_cad (-thicknessX/2..+thicknessX/2), y = Z_cad (0..145), z = -Y_cad
@@ -159,8 +157,8 @@ function buildPartMesh({
 }) {
   const catalogItem = PARTS_CATALOG[partId];
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.castShadow = !isLite;
-  mesh.receiveShadow = !isLite;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
 
   mesh.userData = {
     partId,
@@ -173,8 +171,8 @@ function buildPartMesh({
     basePosition: new THREE.Vector3()
   };
 
-  // Arêtes techniques fines (seuil 15° en mode Lite selon le profil Mali-T830)
-  const edgesGeom = new THREE.EdgesGeometry(geometry, isLite ? 15 : 18);
+  // Arêtes techniques fines
+  const edgesGeom = new THREE.EdgesGeometry(geometry, 18);
   const edgesLine = new THREE.LineSegments(edgesGeom, edgeMaterial);
   edgesLine.userData.isEdgeLine = true;
   mesh.add(edgesLine);
@@ -581,76 +579,66 @@ export function buildSerreAssembly(materials, isLite = false) {
     meshQ01.userData.movingLeafPivot = movingLeafPivot;
 
     const movingLeafMesh = new THREE.Mesh(geomQ01MovingLeaf, materials.metal_galva);
-    if (!isLite) {
-      movingLeafMesh.add(
-        new THREE.LineSegments(new THREE.EdgesGeometry(geomQ01MovingLeaf, 25), materials.edge_line)
-      );
-    }
+    movingLeafMesh.add(
+      new THREE.LineSegments(new THREE.EdgesGeometry(geomQ01MovingLeaf, 25), materials.edge_line)
+    );
     movingLeafPivot.add(movingLeafMesh);
 
     const subQ01Meshes = [movingLeafMesh];
+    const cylSegs = isLite ? 10 : 16;
 
-    if (isLite) {
-      // Mode Lite : 1 gond cylindrique continu Ø 8 × 80 mm coaxial avec l'axe de rotation
-      const barrelGeom = new THREE.CylinderGeometry(4, 4, 80, 10);
-      barrelGeom.rotateZ(Math.PI / 2);
-      const barrelMesh = new THREE.Mesh(barrelGeom, materials.metal_galva);
-      meshQ01.add(barrelMesh);
-      subQ01Meshes.push(barrelMesh);
-    } else {
-      // Mode HD : Axe inox central Ø 4.8 × 82 mm + 5 charnons cylindriques imbriqués (3 fixes + 2 mobiles) + 4 têtes de vis
-      const pinGeom = new THREE.CylinderGeometry(2.4, 2.4, 83, 14);
-      pinGeom.rotateZ(Math.PI / 2);
-      const pinMesh = new THREE.Mesh(pinGeom, materials.metal_dark);
-      meshQ01.add(pinMesh);
-      subQ01Meshes.push(pinMesh);
+    // Axe inox central Ø 4.8 × 82 mm + 5 charnons cylindriques imbriqués (3 fixes + 2 mobiles) + 4 têtes de vis
+    const pinGeom = new THREE.CylinderGeometry(2.4, 2.4, 83, cylSegs);
+    pinGeom.rotateZ(Math.PI / 2);
+    const pinMesh = new THREE.Mesh(pinGeom, materials.metal_dark);
+    meshQ01.add(pinMesh);
+    subQ01Meshes.push(pinMesh);
 
-      const knuckleSegGeom = new THREE.CylinderGeometry(4, 4, 15.4, 16);
-      knuckleSegGeom.rotateZ(Math.PI / 2);
+    const knuckleSegGeom = new THREE.CylinderGeometry(4, 4, 15.4, cylSegs);
+    knuckleSegGeom.rotateZ(Math.PI / 2);
 
-      // 3 charnons cylindriques solidaires du charnon fixe (x = -32, 0, +32 mm)
-      [-32, 0, 32].forEach((kx) => {
-        const kMesh = new THREE.Mesh(knuckleSegGeom, materials.metal_galva);
-        kMesh.position.set(kx, 0, 0);
-        kMesh.add(
-          new THREE.LineSegments(new THREE.EdgesGeometry(knuckleSegGeom, 25), materials.edge_line)
-        );
-        meshQ01.add(kMesh);
-        subQ01Meshes.push(kMesh);
-      });
+    // 3 charnons cylindriques solidaires du charnon fixe (x = -32, 0, +32 mm)
+    [-32, 0, 32].forEach((kx) => {
+      const kMesh = new THREE.Mesh(knuckleSegGeom, materials.metal_galva);
+      kMesh.position.set(kx, 0, 0);
+      kMesh.add(
+        new THREE.LineSegments(new THREE.EdgesGeometry(knuckleSegGeom, 25), materials.edge_line)
+      );
+      meshQ01.add(kMesh);
+      subQ01Meshes.push(kMesh);
+    });
 
-      // 2 charnons cylindriques solidaires du charnon mobile (x = -16, +16 mm)
-      [-16, 16].forEach((kx) => {
-        const kMesh = new THREE.Mesh(knuckleSegGeom, materials.metal_galva);
-        kMesh.position.set(kx, 0, 0);
-        kMesh.add(
-          new THREE.LineSegments(new THREE.EdgesGeometry(knuckleSegGeom, 25), materials.edge_line)
-        );
-        movingLeafPivot.add(kMesh);
-        subQ01Meshes.push(kMesh);
-      });
+    // 2 charnons cylindriques solidaires du charnon mobile (x = -16, +16 mm)
+    [-16, 16].forEach((kx) => {
+      const kMesh = new THREE.Mesh(knuckleSegGeom, materials.metal_galva);
+      kMesh.position.set(kx, 0, 0);
+      kMesh.add(
+        new THREE.LineSegments(new THREE.EdgesGeometry(knuckleSegGeom, 25), materials.edge_line)
+      );
+      movingLeafPivot.add(kMesh);
+      subQ01Meshes.push(kMesh);
+    });
 
-      // Têtes de vis inox sur le charnon fixe (vissées verticalement dans le sommet de P04)
-      // et boulons/rondelles d'étanchéité traversant le toit P10 sur le charnon mobile
-      const screwHeadGeom = new THREE.CylinderGeometry(4.2, 2.5, 1.8, 12);
-      const roofBoltCapGeom = new THREE.CylinderGeometry(5.5, 5.5, 2.2, 14);
-      [-20, 20].forEach((sx) => {
-        const fixedScrew = new THREE.Mesh(screwHeadGeom, materials.metal_dark);
-        fixedScrew.position.set(sx, -1.5, -15);
-        meshQ01.add(fixedScrew);
+    // Têtes de vis inox sur le charnon fixe (vissées verticalement dans le sommet de P04)
+    // et boulons/rondelles d'étanchéité traversant le toit P10 sur le charnon mobile
+    const screwHeadGeom = new THREE.CylinderGeometry(4.2, 2.5, 1.8, isLite ? 8 : 12);
+    const roofBoltCapGeom = new THREE.CylinderGeometry(5.5, 5.5, 2.2, isLite ? 8 : 14);
+    [-20, 20].forEach((sx) => {
+      const fixedScrew = new THREE.Mesh(screwHeadGeom, materials.metal_dark);
+      fixedScrew.position.set(sx, -1.5, -15);
+      meshQ01.add(fixedScrew);
 
-        const movingScrew = new THREE.Mesh(screwHeadGeom, materials.metal_dark);
-        movingScrew.rotation.x = Math.PI;
-        movingScrew.position.set(sx, -0.4, -15);
-        movingLeafPivot.add(movingScrew);
+      const movingScrew = new THREE.Mesh(screwHeadGeom, materials.metal_dark);
+      movingScrew.rotation.x = Math.PI;
+      movingScrew.position.set(sx, -0.4, -15);
+      movingLeafPivot.add(movingScrew);
 
-        const topWasherCap = new THREE.Mesh(roofBoltCapGeom, materials.metal_dark);
-        topWasherCap.position.set(sx, 14.5, -15);
-        movingLeafPivot.add(topWasherCap);
+      const topWasherCap = new THREE.Mesh(roofBoltCapGeom, materials.metal_dark);
+      topWasherCap.position.set(sx, 14.5, -15);
+      movingLeafPivot.add(topWasherCap);
 
-        subQ01Meshes.push(fixedScrew, movingScrew, topWasherCap);
-      });
-    }
+      subQ01Meshes.push(fixedScrew, movingScrew, topWasherCap);
+    });
 
     subQ01Meshes.forEach((subM) => {
       subM.userData = meshQ01.userData;
@@ -807,111 +795,86 @@ export function buildSerreAssembly(materials, isLite = false) {
 
     const bailLen = 34; // Franchit la distance entre bailPivot (X=±942) et le bec de gâche (X=±976)
 
-    if (isLite) {
-      // En mode Lite (Mali-T830), réduire les draw calls : 1 boîte levier + 1 étrier simplifié
-      const leverBodyGeom = new THREE.BoxGeometry(47, 13, 2.5);
-      leverBodyGeom.translate(-lc.dirX * 18, 0, outZ * 2);
-      const leverMesh = new THREE.Mesh(leverBodyGeom, materials.metal_galva);
-      leverPivot.add(leverMesh);
+    // Corps plat du levier (36 × 13 × 2.5 mm)
+    const leverBodyGeom = new THREE.BoxGeometry(36, 13, 2.5);
+    leverBodyGeom.translate(-lc.dirX * 14, 0, outZ * 2);
+    const leverMesh = new THREE.Mesh(leverBodyGeom, materials.metal_galva);
+    leverMesh.add(
+      new THREE.LineSegments(new THREE.EdgesGeometry(leverBodyGeom, 25), materials.edge_line)
+    );
+    leverPivot.add(leverMesh);
 
-      const bailBoxGeom = new THREE.BoxGeometry(bailLen, 23, 3);
-      bailBoxGeom.translate((lc.dirX * bailLen) / 2, 0, -outZ * 1);
-      const bailBoxMesh = new THREE.Mesh(bailBoxGeom, materials.metal_galva);
-      bailBoxMesh.add(
-        new THREE.LineSegments(new THREE.EdgesGeometry(bailBoxGeom, 15), materials.edge_line)
-      );
-      bailPivot.add(bailBoxMesh);
+    // Palette de pouce relevée au bout du levier (portant la longueur à 49 mm)
+    const thumbTabGeom = new THREE.BoxGeometry(11, 13, 2.5);
+    thumbTabGeom.rotateY(-lc.dirX * outZ * 0.38);
+    thumbTabGeom.translate(-lc.dirX * 36, 0, outZ * 4.2);
+    const thumbTabMesh = new THREE.Mesh(thumbTabGeom, materials.metal_galva);
+    thumbTabMesh.add(
+      new THREE.LineSegments(new THREE.EdgesGeometry(thumbTabGeom, 25), materials.edge_line)
+    );
+    leverPivot.add(thumbTabMesh);
 
-      [leverMesh, bailBoxMesh].forEach((m) => {
-        m.userData = meshQ03.userData;
-        partMeshes.push(m);
-        solidMeshes.push(m);
-      });
-    } else {
-      // Corps plat du levier (36 × 13 × 2.5 mm)
-      const leverBodyGeom = new THREE.BoxGeometry(36, 13, 2.5);
-      leverBodyGeom.translate(-lc.dirX * 14, 0, outZ * 2);
-      const leverMesh = new THREE.Mesh(leverBodyGeom, materials.metal_galva);
-      leverMesh.add(
-        new THREE.LineSegments(new THREE.EdgesGeometry(leverBodyGeom, 25), materials.edge_line)
-      );
-      leverPivot.add(leverMesh);
+    // Étrier en fil d'acier rond Ø 3 mm (largeur 23 mm) :
+    // Part de bailPivot (|X|=942, |Z|=257.5) jusqu'au bec de gâche (|X|=976, |Z|=252.5),
+    // donc 9.5 mm devant le bois P05 (|Z|<=248) sans aucune collision !
+    const bailHalfW = 10;
+    const wireRad = 1.5;
+    const wireSegs = isLite ? 8 : 12;
 
-      // Palette de pouce relevée au bout du levier (portant la longueur à 49 mm)
-      const thumbTabGeom = new THREE.BoxGeometry(11, 13, 2.5);
-      thumbTabGeom.rotateY(-lc.dirX * outZ * 0.38);
-      thumbTabGeom.translate(-lc.dirX * 36, 0, outZ * 4.2);
-      const thumbTabMesh = new THREE.Mesh(thumbTabGeom, materials.metal_galva);
-      thumbTabMesh.add(
-        new THREE.LineSegments(new THREE.EdgesGeometry(thumbTabGeom, 25), materials.edge_line)
-      );
-      leverPivot.add(thumbTabMesh);
+    const wireTopGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailLen, wireSegs);
+    wireTopGeom.rotateZ(Math.PI / 2);
+    wireTopGeom.translate((lc.dirX * bailLen) / 2, bailHalfW, 0);
 
-      // Étrier en fil d'acier rond Ø 3 mm (largeur 23 mm) :
-      // Part de bailPivot (|X|=942, |Z|=257.5) jusqu'au bec de gâche (|X|=976, |Z|=252.5),
-      // donc 9.5 mm devant le bois P05 (|Z|<=248) sans aucune collision !
-      const bailHalfW = 10;
-      const wireRad = 1.5;
+    const wireBotGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailLen, wireSegs);
+    wireBotGeom.rotateZ(Math.PI / 2);
+    wireBotGeom.translate((lc.dirX * bailLen) / 2, -bailHalfW, 0);
 
-      const wireTopGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailLen, 12);
-      wireTopGeom.rotateZ(Math.PI / 2);
-      wireTopGeom.translate((lc.dirX * bailLen) / 2, bailHalfW, 0);
+    const wireFrontGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailHalfW * 2 + 2, wireSegs);
+    wireFrontGeom.translate(lc.dirX * bailLen, 0, -outZ * 3.5);
 
-      const wireBotGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailLen, 12);
-      wireBotGeom.rotateZ(Math.PI / 2);
-      wireBotGeom.translate((lc.dirX * bailLen) / 2, -bailHalfW, 0);
+    const wireBackTopGeom = new THREE.CylinderGeometry(wireRad, wireRad, 4.5, wireSegs);
+    wireBackTopGeom.translate(0, bailHalfW - 2, 0);
+    const wireBackBotGeom = new THREE.CylinderGeometry(wireRad, wireRad, 4.5, wireSegs);
+    wireBackBotGeom.translate(0, -bailHalfW + 2, 0);
 
-      const wireFrontGeom = new THREE.CylinderGeometry(wireRad, wireRad, bailHalfW * 2 + 2, 12);
-      wireFrontGeom.translate(lc.dirX * bailLen, 0, -outZ * 3.5);
+    const wireTopMesh = new THREE.Mesh(wireTopGeom, materials.metal_galva);
+    const wireBotMesh = new THREE.Mesh(wireBotGeom, materials.metal_galva);
+    const wireFrontMesh = new THREE.Mesh(wireFrontGeom, materials.metal_galva);
+    const wireBackTopMesh = new THREE.Mesh(wireBackTopGeom, materials.metal_galva);
+    const wireBackBotMesh = new THREE.Mesh(wireBackBotGeom, materials.metal_galva);
+    bailPivot.add(wireTopMesh, wireBotMesh, wireFrontMesh, wireBackTopMesh, wireBackBotMesh);
 
-      const wireBackTopGeom = new THREE.CylinderGeometry(wireRad, wireRad, 4.5, 10);
-      wireBackTopGeom.translate(0, bailHalfW - 2, 0);
-      const wireBackBotGeom = new THREE.CylinderGeometry(wireRad, wireRad, 4.5, 10);
-      wireBackBotGeom.translate(0, -bailHalfW + 2, 0);
-
-      const wireTopMesh = new THREE.Mesh(wireTopGeom, materials.metal_galva);
-      const wireBotMesh = new THREE.Mesh(wireBotGeom, materials.metal_galva);
-      const wireFrontMesh = new THREE.Mesh(wireFrontGeom, materials.metal_galva);
-      const wireBackTopMesh = new THREE.Mesh(wireBackTopGeom, materials.metal_galva);
-      const wireBackBotMesh = new THREE.Mesh(wireBackBotGeom, materials.metal_galva);
-      bailPivot.add(wireTopMesh, wireBotMesh, wireFrontMesh, wireBackTopMesh, wireBackBotMesh);
-
-      [
-        leverMesh,
-        thumbTabMesh,
-        wireTopMesh,
-        wireBotMesh,
-        wireFrontMesh,
-        wireBackTopMesh,
-        wireBackBotMesh
-      ].forEach((m) => {
-        m.userData = meshQ03.userData;
-        partMeshes.push(m);
-        solidMeshes.push(m);
-      });
-    }
+    [
+      leverMesh,
+      thumbTabMesh,
+      wireTopMesh,
+      wireBotMesh,
+      wireFrontMesh,
+      wireBackTopMesh,
+      wireBackBotMesh
+    ].forEach((m) => {
+      m.userData = meshQ03.userData;
+      partMeshes.push(m);
+      solidMeshes.push(m);
+    });
 
     groups.hardware.add(meshQ03);
 
     // 2. Gâche plate (36 × 15 × 2 mm, 2 trous Ø 4 mm espacés de 20 mm) vissée à 90°
     //    sur la FACE EXTÉRIEURE du Côté Amovible P05 (X_cad = ±978 mm, Y_cad de ±212 à ±248 mm)
     const catchBaseMesh = new THREE.Mesh(geomCatchPlate, materials.metal_galva);
-    if (!isLite) {
-      catchBaseMesh.add(
-        new THREE.LineSegments(new THREE.EdgesGeometry(geomCatchPlate, 25), materials.edge_line)
-      );
-    }
+    catchBaseMesh.add(
+      new THREE.LineSegments(new THREE.EdgesGeometry(geomCatchPlate, 25), materials.edge_line)
+    );
 
     // Bec recourbé à 90° au bout de la gâche (à l'arête d'angle X=±977, Y=±250 mm) qui retient le fil Ø 3 mm de l'étrier
     const hookLipGeom = new THREE.BoxGeometry(5, 15, 6);
     hookLipGeom.rotateY(lc.dirX * outZ * 0.45);
     hookLipGeom.translate(-lc.dirX * 1.5, 0, outZ * 19.5);
     const catchHookMesh = new THREE.Mesh(hookLipGeom, materials.metal_galva);
-    if (!isLite) {
-      catchHookMesh.add(
-        new THREE.LineSegments(new THREE.EdgesGeometry(hookLipGeom, 25), materials.edge_line)
-      );
-    }
+    catchHookMesh.add(
+      new THREE.LineSegments(new THREE.EdgesGeometry(hookLipGeom, 25), materials.edge_line)
+    );
 
     const catchCenterYCad = lc.face === 'front' ? -231 : 231; // s'étend de ±213 à ±249 mm sur la face extérieure de P05
     catchBaseMesh.position.copy(cadToThree(lc.dirX * 978, catchCenterYCad, lc.zCad));

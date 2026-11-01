@@ -61,6 +61,7 @@ function createWoodTexture({
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(0.0025, 0.006);
+  tex.anisotropy = 4;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -87,99 +88,114 @@ function createPolycarbonateTexture() {
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(0.01, 0.02);
+  tex.anisotropy = 4;
   return tex;
 }
 
 export function createMaterialsRegistry(clippingPlanes = [], isLite = false) {
-  if (isLite) {
-    // ============================================================================
-    // PROFIL D'OPTIMISATION MATÉRIELLE — SAMSUNG GALAXY TAB A (SM-T580 / Mali-T830)
-    // Zéro shader PBR (MeshStandard/Physical bannis), zéro texture bitmap,
-    // Gouraud shading (MeshLambertMaterial flatShading) & MeshBasicMaterial FrontSide
-    // ============================================================================
-    return {
-      wood_deck: new THREE.MeshLambertMaterial({
-        color: 0xc89666,
-        flatShading: true,
-        clippingPlanes
-      }),
-
-      wood_post: new THREE.MeshLambertMaterial({
-        color: 0xb07d4f,
-        flatShading: true,
-        clippingPlanes
-      }),
-
-      wood_to_buy: new THREE.MeshLambertMaterial({
-        color: 0xeab308,
-        flatShading: true,
-        clippingPlanes
-      }),
-
-      polycarbonate: new THREE.MeshBasicMaterial({
-        color: 0xd8f0ff,
-        transparent: true,
-        opacity: 0.25,
-        depthWrite: false, // CRITIQUE : Empêche le blocage du pipeline de tuiles sur la transparence
-        side: THREE.FrontSide, // Évite de calculer 2x chaque plaque (pas de DoubleSide)
-        clippingPlanes
-      }),
-
-      metal_galva: new THREE.MeshLambertMaterial({
-        color: 0xcbd5e1,
-        flatShading: true,
-        clippingPlanes
-      }),
-
-      metal_dark: new THREE.MeshLambertMaterial({
-        color: 0x334155,
-        flatShading: true,
-        clippingPlanes
-      }),
-
-      trolley_wood: new THREE.MeshLambertMaterial({
-        color: 0x855e3c,
-        flatShading: true,
-        clippingPlanes
-      }),
-
-      plant_foliage: new THREE.MeshLambertMaterial({
-        color: 0x2d8a4e,
-        flatShading: true,
-        clippingPlanes
-      }),
-
-      terracotta: new THREE.MeshLambertMaterial({
-        color: 0xb4532a,
-        flatShading: true,
-        clippingPlanes
-      }),
-
-      edge_line: new THREE.LineBasicMaterial({
-        color: 0x557799,
-        clippingPlanes
-      }),
-
-      edge_poly: new THREE.LineBasicMaterial({
-        color: 0x38bdf8,
-        clippingPlanes
-      })
-    };
-  }
-
   const deckTex = createWoodTexture({
     baseColor: '#bf9460',
     grainColor: '#85582a',
-    greenTint: 'rgba(92, 128, 76, 0.14)'
+    greenTint: 'rgba(92, 128, 76, 0.14)',
+    width: isLite ? 256 : 512,
+    height: isLite ? 128 : 256
   });
 
   const postTex = createWoodTexture({
     baseColor: '#a97e4d',
     grainColor: '#6e4720',
-    greenTint: 'rgba(74, 114, 66, 0.20)'
+    greenTint: 'rgba(74, 114, 66, 0.20)',
+    width: isLite ? 256 : 512,
+    height: isLite ? 128 : 256
   });
 
   const polyTex = createPolycarbonateTexture();
+
+  if (isLite) {
+    // ============================================================================
+    // PROFIL TABLETTE OPTIMISÉ (Rendu très proche du mode HD avec shaders légers)
+    // - Textures procédurales bois & alvéoles polycarbonate avec filtrage anisotrope
+    // - Smooth shading + spéculaire léger sur l'inox/galva (MeshPhongMaterial)
+    // - Arêtes adoucies par alpha-blending (zéro effet d'escalier agressif)
+    // ============================================================================
+    return {
+      wood_deck: new THREE.MeshLambertMaterial({
+        map: deckTex,
+        clippingPlanes,
+        clipShadows: true
+      }),
+
+      wood_post: new THREE.MeshLambertMaterial({
+        map: postTex,
+        clippingPlanes,
+        clipShadows: true
+      }),
+
+      wood_to_buy: new THREE.MeshLambertMaterial({
+        map: postTex,
+        color: 0xeab308,
+        clippingPlanes,
+        clipShadows: true
+      }),
+
+      polycarbonate: new THREE.MeshLambertMaterial({
+        map: polyTex,
+        color: 0xdff4ff,
+        transparent: true,
+        opacity: 0.38,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        clippingPlanes,
+        clipShadows: true
+      }),
+
+      metal_galva: new THREE.MeshPhongMaterial({
+        color: 0xdbe4ee,
+        specular: 0x94a3b8,
+        shininess: 65,
+        clippingPlanes,
+        clipShadows: true
+      }),
+
+      metal_dark: new THREE.MeshPhongMaterial({
+        color: 0x263445,
+        specular: 0x64748b,
+        shininess: 50,
+        clippingPlanes,
+        clipShadows: true
+      }),
+
+      trolley_wood: new THREE.MeshLambertMaterial({
+        map: deckTex,
+        color: 0x9a7452,
+        clippingPlanes
+      }),
+
+      plant_foliage: new THREE.MeshLambertMaterial({
+        color: 0x2d8a4e,
+        clippingPlanes
+      }),
+
+      terracotta: new THREE.MeshLambertMaterial({
+        color: 0xb4532a,
+        clippingPlanes
+      }),
+
+      edge_line: new THREE.LineBasicMaterial({
+        color: 0x1e293b,
+        transparent: true,
+        opacity: 0.45,
+        clippingPlanes
+      }),
+
+      edge_poly: new THREE.LineBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.68,
+        clippingPlanes
+      })
+    };
+  }
 
   const materials = {
     wood_deck: new THREE.MeshStandardMaterial({
