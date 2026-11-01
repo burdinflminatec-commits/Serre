@@ -131,7 +131,7 @@ export const PARTS_CATALOG = {
       { x: 403.5, y: 35, d: 5 },
       { x: 403.5, y: 110, d: 5 }
     ],
-    notes: '✅ 6 lames par côté (88,5 cm de haut) sont DÉJÀ MONTÉES sur la petite face 45 mm des lambourdes P07/P08 (en retrait de 70 mm des bords pour laisser place à P02/P04) • 🪚 Reste 2 lames P05 (Rang 7 G et D) à couper.'
+    notes: '✅ 6 lames par côté DÉJÀ MONTÉES (885 mm mesurés = 6 × 145 + 5 joints de 3 mm, pas 148 mm) sur la petite face 45 mm des lambourdes P07/P08 • 🪚 Reste 2 lames P05 (Rang 7 G et D, Z=888..1033 mm) à couper et poser avec le même joint de 3 mm.'
   },
 
   P06: {
@@ -172,16 +172,16 @@ export const PARTS_CATALOG = {
     thickness: 70,
     shapeType: 'rect_board',
     holes: [
-      { x: 72, y: 22.5, d: 5 },
-      { x: 222, y: 22.5, d: 5 },
-      { x: 372, y: 22.5, d: 5 },
-      { x: 522, y: 22.5, d: 5 },
-      { x: 672, y: 22.5, d: 5 },
-      { x: 822, y: 22.5, d: 5 },
-      { x: 972, y: 22.5, d: 5 },
-      { x: 1110, y: 22.5, d: 5 }
+      { x: 72.5, y: 22.5, d: 5 },
+      { x: 220.5, y: 22.5, d: 5 },
+      { x: 368.5, y: 22.5, d: 5 },
+      { x: 516.5, y: 22.5, d: 5 },
+      { x: 664.5, y: 22.5, d: 5 },
+      { x: 812.5, y: 22.5, d: 5 },
+      { x: 960.5, y: 22.5, d: 5 },
+      { x: 1100, y: 22.5, d: 5 }
     ],
-    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord arrière pour s’emboîter devant P02) • 🪚 Recouper le haut de -49 mm (→ 1155 mm).'
+    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord arrière pour s’emboîter devant P02) • Lames au pas réel de 148 mm (joints 3 mm) • 🪚 Recouper le haut de -49 mm (→ 1155 mm).'
   },
 
   P08: {
@@ -198,15 +198,15 @@ export const PARTS_CATALOG = {
     thickness: 70,
     shapeType: 'rect_board',
     holes: [
-      { x: 72, y: 22.5, d: 5 },
-      { x: 222, y: 22.5, d: 5 },
-      { x: 372, y: 22.5, d: 5 },
-      { x: 522, y: 22.5, d: 5 },
-      { x: 672, y: 22.5, d: 5 },
-      { x: 822, y: 22.5, d: 5 },
-      { x: 972, y: 22.5, d: 5 }
+      { x: 72.5, y: 22.5, d: 5 },
+      { x: 220.5, y: 22.5, d: 5 },
+      { x: 368.5, y: 22.5, d: 5 },
+      { x: 516.5, y: 22.5, d: 5 },
+      { x: 664.5, y: 22.5, d: 5 },
+      { x: 812.5, y: 22.5, d: 5 },
+      { x: 960.5, y: 22.5, d: 5 }
     ],
-    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord avant pour s’emboîter derrière P04) • 🪚 Recouper le haut de -174 mm (→ 1030 mm).'
+    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord avant pour s’emboîter derrière P04) • 🪚 Recouper le haut de -174 mm (→ 1030 mm, sous le haut de la 7ème lame P05 à 1033 mm).'
   },
 
   P09: {

@@ -415,10 +415,14 @@ export function buildSerreAssembly(materials, isLite = false) {
     }
   ];
 
+  // Pas réel des lames de côté mesuré au mètre : 6 lames assemblées = 885 mm
+  // => 6 × 145 + 5 joints de 3 mm = 885 mm -> pas de 148 mm (au lieu de 150 mm en façade)
+  const SIDE_SLAT_PITCH = (885 - 145) / 5; // 148 mm
+
   sidesConfig.forEach((sc, sIdx) => {
-    // 7 lames rectangulaires P05 (rangs 1 à 7)
+    // 7 lames rectangulaires P05 (rangs 1 à 7, joints de 3 mm : R6 haut = 885 mm, R7 = 888..1033 mm)
     for (let r = 0; r < 7; r++) {
-      const zBottom = r * 150;
+      const zBottom = r * SIDE_SLAT_PITCH;
       const zCenter = zBottom + 145 / 2;
       const mesh = buildPartMesh({
         geometry: geomP05,
@@ -437,7 +441,8 @@ export function buildSerreAssembly(materials, isLite = false) {
       sc.group.add(mesh);
     }
 
-    // 8ème lame supérieure en pente P06
+    // 8ème lame supérieure en pente P06 (posée avec le même joint de 3 mm : Z = 1036 mm,
+    // laisse ~14 mm de jeu sous le toit P10 pour faire glisser le côté amovible sans frotter)
     const meshP06 = buildPartMesh({
       geometry: geomP06,
       material: materials.wood_deck,
@@ -450,7 +455,7 @@ export function buildSerreAssembly(materials, isLite = false) {
       solidMeshes,
       partMeshes
     });
-    meshP06.position.copy(cadToThree(sc.slatX, 0, 7 * 150));
+    meshP06.position.copy(cadToThree(sc.slatX, 0, 7 * SIDE_SLAT_PITCH));
     meshP06.userData.basePosition.copy(meshP06.position);
     sc.group.add(meshP06);
 
