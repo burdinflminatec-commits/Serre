@@ -12,34 +12,50 @@ export function renderCutlistModal({
 }) {
   if (!modalBodyEl) return;
 
-  // Cartes de synthèse en haut de la modale
+  // Cartes de synthèse en haut de la modale (adaptées à l'inventaire réel de l'atelier)
   const summaryHtml = `
     <div class="cutlist-summary-grid">
       <div class="summary-card">
-        <div class="lbl">Lames Terrasse 2400×145×27</div>
-        <div class="val">14 / 14 en stock (99% utilisé)</div>
+        <div class="lbl">Lames Terrasse (145×27 mm)</div>
+        <div class="val">2×240 cm à couper • 12×190 cm + 2×6 montées ✅</div>
       </div>
       <div class="summary-card warn">
-        <div class="lbl">Lambourdes Cl.4 2400×70×45</div>
-        <div class="val">4 en stock + 2 à acheter</div>
+        <div class="lbl">Lambourdes Cl.4 (70×45 mm)</div>
+        <div class="val">4 montées + 2×120 cm + 1×240 cm (+ 2 à acheter)</div>
       </div>
       <div class="summary-card">
-        <div class="lbl">Polycarbonate 2000×980×10</div>
-        <div class="val">1 / 1 en stock (Toit + Façade)</div>
+        <div class="lbl">Côtés G/D Pré-assemblés</div>
+        <div class="val">6 lames (88,5 cm) + 2 lambourdes (120,4 cm)/côté</div>
       </div>
       <div class="summary-card">
-        <div class="lbl">Trait de scie &amp; Visserie Inox</div>
-        <div class="val">Kerf ${SAW_KERF} mm • ~154 / 180 vis</div>
+        <div class="lbl">Polycarbonate &amp; Visserie</div>
+        <div class="val">1 Plaque 2000×980 • Kerf ${SAW_KERF} mm • ~154 vis</div>
       </div>
     </div>
   `;
 
-  // Section 1 : Les 14 lames de terrasse (regroupées intelligemment ou affichées barre par barre)
-  const terraceHtml = STOCK_CUTLIST.terraceBoards
-    .map((board) => renderLinearBoardRow(board, highlightedPartId, false))
-    .join('');
+  // Section 1 : Les lames de terrasse (les 2 lames entières 240 cm à couper en tête, suivies des 12 lames déjà coupées/montées)
+  const terraceToCut = STOCK_CUTLIST.terraceBoards.filter((b) => b.status === 'to_cut');
+  const terraceAlreadyCut = STOCK_CUTLIST.terraceBoards.filter((b) => b.status === 'already_cut');
 
-  // Section 2 : Les 5 lambourdes
+  const terraceHtml = `
+    <div style="margin-bottom:8px;font-size:12px;color:#38bdf8;font-weight:600;">
+      🪚 À DÉBITER EN ATELIER — Vos 2 lames entières restantes (2 × 2400 mm) :
+    </div>
+    ${terraceToCut.map((board) => renderLinearBoardRow(board, highlightedPartId, false)).join('')}
+    <details style="margin-top:10px;background:rgba(15,23,42,0.55);border:1px solid rgba(148,163,184,0.18);border-radius:8px;padding:8px 12px;" ${
+      highlightedPartId === 'P01' || highlightedPartId === 'P03' || highlightedPartId === 'P05' ? 'open' : ''
+    }>
+      <summary style="cursor:pointer;font-size:12px;font-weight:600;color:#86efac;user-select:none;">
+        ✅ DÉJÀ COUPÉES &amp; MONTÉES — Vos 12 lames de 190 cm (8×P01 + 4×P03) et vos 2×6 lames de côté montées (12×P05 = 88,5 cm/côté) — Cliquer pour afficher le détail (12 lames)
+      </summary>
+      <div style="margin-top:10px;">
+        ${terraceAlreadyCut.map((board) => renderLinearBoardRow(board, highlightedPartId, false)).join('')}
+      </div>
+    </details>
+  `;
+
+  // Section 2 : Les lambourdes (4 montées sur côtés à recouper en haut + 2 demi-lambourdes libres + 1 entière + 2 à racheter)
   const lambourdesHtml = STOCK_CUTLIST.lambourdes
     .map((board) => renderLinearBoardRow(board, highlightedPartId, false))
     .join('');
@@ -52,16 +68,16 @@ export function renderCutlistModal({
 
     <div class="cutlist-category-block">
       <div class="cutlist-category-title">
-        <span>1️⃣ Débit Linéaire — 14 × Lames de Terrasse Pin Vert Cerland (2400 × 145 × 27 mm)</span>
-        <span class="stock-pill">✅ 14 / 14 En Stock (Astuce 1900 + 496 mm = 0 chute sur 13 lames)</span>
+        <span>1️⃣ Lames de Terrasse Pin Vert (145 × 27 mm) — 2 × 240 cm à couper + 12 × 190 cm prêtes + 2×6 lames montées</span>
+        <span class="stock-pill">✅ 100% en stock (Seules les 2 lames entières de 240 cm restent à couper)</span>
       </div>
       ${terraceHtml}
     </div>
 
     <div class="cutlist-category-block">
       <div class="cutlist-category-title">
-        <span>2️⃣ Débit Linéaire — 6 × Lambourdes Pin Vert Classe 4 (2400 × 70 × 45 mm)</span>
-        <span class="stock-pill to-buy">⚠️ 4 En Stock + 2 Lambourdes à racheter (LAMB-05 &amp; LAMB-06)</span>
+        <span>2️⃣ Lambourdes Pin Cl.4 (70 × 45 mm) — 4×120,4 cm montées + 2×120 cm libres + 1×240 cm entière + 2 à acheter</span>
+        <span class="stock-pill to-buy">⚠️ Recouper les 4 montées &amp; les 2 demi-lambourdes + 2 Lambourdes à racheter</span>
       </div>
       ${lambourdesHtml}
     </div>
@@ -112,15 +128,24 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
   const barY = 26;
   const barH = 38;
   const usableW = svgW - padL - padR;
-  const scale = usableW / board.length;
+  const refMaxLen = 2400;
+  const scale = usableW / refMaxLen;
+  const boardPxW = board.length * scale;
 
-  // Graduations de mètre ruban tous les 200 mm + cumul des coupes
+  // Graduations de mètre ruban tous les 200 mm jusqu'à board.length
   const ticks = [];
   for (let mm = 0; mm <= board.length; mm += 200) {
     const tx = padL + mm * scale;
     ticks.push(`
       <line x1="${tx}" y1="12" x2="${tx}" y2="${barY}" stroke="${isPrint ? '#475569' : '#64748b'}" stroke-width="1" />
       <text x="${tx}" y="10" text-anchor="middle" fill="${isPrint ? '#0f172a' : '#94a3b8'}" font-family="monospace" font-size="9.5">${mm}</text>
+    `);
+  }
+  if (board.length % 200 !== 0) {
+    const endTx = padL + board.length * scale;
+    ticks.push(`
+      <line x1="${endTx}" y1="12" x2="${endTx}" y2="${barY}" stroke="${isPrint ? '#0284c7' : '#38bdf8'}" stroke-width="1.2" />
+      <text x="${endTx}" y="10" text-anchor="middle" fill="${isPrint ? '#0284c7' : '#38bdf8'}" font-family="monospace" font-size="9.5" font-weight="bold">${board.length}</text>
     `);
   }
 
@@ -142,6 +167,12 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
       } else if (!isPrint && board.status === 'to_buy') {
         fill = 'rgba(245, 158, 11, 0.22)';
         stroke = '#f59e0b';
+      } else if (!isPrint && board.status === 'trim_mounted') {
+        fill = 'rgba(16, 185, 129, 0.22)';
+        stroke = '#34d399';
+      } else if (!isPrint && board.status === 'already_cut') {
+        fill = 'rgba(34, 197, 94, 0.14)';
+        stroke = '#4ade80';
       }
 
       const endMm = cut.startX + cut.length;
@@ -212,7 +243,7 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
     })
     .join('');
 
-  // Zone de chute éventuelle
+  // Zone de chute éventuelle (sur la longueur réelle board.length)
   const lastCut = board.cuts[board.cuts.length - 1];
   const usedMm = lastCut ? lastCut.startX + lastCut.length : 0;
   const offcutMm = Math.max(0, board.length - usedMm);
@@ -221,29 +252,51 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
     const ox = padL + usedMm * scale;
     const ow = offcutMm * scale;
     offcutSvg = `
-      <rect x="${ox}" y="${barY}" width="${ow}" height="${barH}" fill="rgba(148, 163, 184, 0.08)" stroke="#475569" stroke-dasharray="4 3" />
+      <rect x="${ox}" y="${barY}" width="${ow}" height="${barH}" fill="rgba(239, 68, 68, 0.12)" stroke="#ef4444" stroke-dasharray="4 3" />
       ${
-        ow > 45
-          ? `<text x="${ox + ow / 2}" y="${barY + 23}" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="9.5">Chute ${offcutMm} mm</text>`
+        ow > 55
+          ? `<text x="${ox + ow / 2}" y="${barY + 23}" text-anchor="middle" fill="#fca5a5" font-family="monospace" font-size="9.5">-${offcutMm} mm</text>`
           : ''
       }
     `;
   }
+
+  // Note explicative à droite pour les demi-lambourdes (~120,1 ou 120,4 cm)
+  let shortBoardNoteSvg = '';
+  if (board.length < refMaxLen) {
+    const noteX = padL + boardPxW + 18;
+    const targetLen = lastCut ? lastCut.length : board.length;
+    shortBoardNoteSvg = `
+      <text x="${noteX}" y="${barY + 15}" fill="${isPrint ? '#0f172a' : '#34d399'}" font-family="monospace" font-size="10.5" font-weight="bold">
+        📏 Pièce actuelle : ${board.length} mm (${(board.length / 10).toFixed(1)} cm)
+      </text>
+      <text x="${noteX}" y="${barY + 31}" fill="${isPrint ? '#334155' : '#94a3b8'}" font-family="monospace" font-size="9.5">
+        🪚 Recouper à ${targetLen} mm (retirer ${offcutMm} mm en haut)
+      </text>
+    `;
+  }
+
+  const badgeText =
+    board.statusBadge ||
+    (board.status === 'to_buy'
+      ? '🛒 À racheter (1 unité)'
+      : `✅ En stock • Chute : ${offcutMm} mm`);
 
   return `
     <div class="${isPrint ? 'print-board-item' : `board-row ${board.status === 'to_buy' ? 'buy-needed' : ''}`}" data-board-id="${board.stockId}">
       <div class="board-row-header">
         <strong>${board.stockId} — ${board.label} (${board.length} × ${board.width} × ${board.thickness} mm)</strong>
         <span class="stock-pill ${board.status === 'to_buy' ? 'to-buy' : ''}">
-          ${board.status === 'to_buy' ? '🛒 À racheter (1 unité)' : `✅ En stock • Chute : ${offcutMm} mm`}
+          ${badgeText}
         </span>
       </div>
       <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" height="${svgH}" xmlns="http://www.w3.org/2000/svg">
-        <!-- Fond de la planche brute -->
-        <rect x="${padL}" y="${barY}" width="${usableW}" height="${barH}" fill="${isPrint ? '#f8fafc' : '#0b1017'}" stroke="#475569" stroke-width="1" />
+        <!-- Fond de la planche brute (échelle proportionnelle à 2400 mm) -->
+        <rect x="${padL}" y="${barY}" width="${boardPxW}" height="${barH}" fill="${isPrint ? '#f8fafc' : '#0b1017'}" stroke="#475569" stroke-width="1" />
         ${ticks.join('')}
         ${cutsSvg}
         ${offcutSvg}
+        ${shortBoardNoteSvg}
       </svg>
     </div>
   `;
@@ -342,19 +395,15 @@ function renderPrintableSheet(printSheetEl) {
     )
     .join('');
 
-  // Regrouper les lames identiques pour que le schéma d'impression tienne proprement sur A4
+  // Regrouper les lames déjà coupées pour que le schéma d'impression tienne proprement sur A4
   const sampleBoards = [
+    STOCK_CUTLIST.terraceBoards[0], // LAME-FULL-1 (À couper)
+    STOCK_CUTLIST.terraceBoards[1], // LAME-FULL-2 (À couper)
     {
-      ...STOCK_CUTLIST.terraceBoards[0],
-      stockId: 'LAMES #1 à #8 (×8)',
-      label: '8 Lames de Terrasse identiques : chacune donne 1× P01 (Arrière 1900mm) + 1× P05 (Côté 496mm)'
+      ...STOCK_CUTLIST.terraceBoards[2],
+      stockId: 'LAMES #01 à #12 (×12 DÉJÀ PRÊTES)',
+      label: '12 × Lames de 190 cm (8×P01 + 4×P03) + 12 × Lames 49,6 cm déjà montées sur les 2 côtés (6/côté = 88,5 cm)'
     },
-    {
-      ...STOCK_CUTLIST.terraceBoards[8],
-      stockId: 'LAMES #9 à #13 (×5)',
-      label: '5 Lames de Terrasse identiques : chacune donne 1× P03 (Avant 1900mm) + 1× P05 (Côté 496mm)'
-    },
-    STOCK_CUTLIST.terraceBoards[13],
     ...STOCK_CUTLIST.lambourdes
   ];
 
