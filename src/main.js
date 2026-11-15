@@ -417,6 +417,7 @@ const measurementTool = new MeasurementTool({
 let selectedMesh = null;
 let selectedPartId = null;
 let isIsolated = false;
+let showAlreadyCutOnly = false;
 
 const selectionBox = new THREE.BoxHelper(new THREE.Mesh(), 0xf59e0b);
 selectionBox.material.depthTest = false;
@@ -435,6 +436,78 @@ const inspQty = document.getElementById('insp-qty');
 const inspSvgContainer = document.getElementById('inspector-svg-container');
 const hudSelection = document.getElementById('hud-selection');
 const btnInspIsolate = document.getElementById('btn-insp-isolate');
+const btnTopAlreadyCut = document.getElementById('btn-top-already-cut');
+
+function isGroupChecked(groupName) {
+  const chk = document.querySelector(`input[data-group="${groupName}"]`);
+  return chk ? chk.checked : true;
+}
+
+function updateHudBanner() {
+  if (selectedMesh && selectedPartId) {
+    const part = PARTS_CATALOG[selectedPartId];
+    if (part) {
+      hudSelection.innerHTML = `<strong style="color:#fde68a;">${selectedMesh.userData.instanceId}</strong> — ${part.name} (${part.length}×${part.width}×${part.thickness} mm)`;
+      hudSelection.classList.remove('hidden');
+      return;
+    }
+  }
+  if (showAlreadyCutOnly) {
+    hudSelection.innerHTML = `✅ <strong style="color:#86efac;">Pièces déjà découpées (28)</strong> — 8×P01 (Arrière) • 4×P03 (Avant R1–R4) • 12×P05 + 4×P07/P08 (Côtés G/D)`;
+    hudSelection.classList.remove('hidden');
+    return;
+  }
+  hudSelection.textContent = '';
+  hudSelection.classList.add('hidden');
+}
+
+function syncPartVisibility() {
+  const polyVisible = isGroupChecked('polycarbonate');
+
+  serre.groups.backWall.visible = isGroupChecked('backWall');
+  serre.groups.frontWall.visible = isGroupChecked('frontWall');
+  serre.groups.sideLeft.visible = isGroupChecked('sideLeft');
+  serre.groups.sideRight.visible = isGroupChecked('sideRight');
+  serre.groups.roofPivot.visible = isGroupChecked('roof');
+  serre.groups.hardware.visible = isGroupChecked('hardware');
+  serre.groups.trolley.visible =
+    !isIsolated && !showAlreadyCutOnly && isGroupChecked('trolley');
+
+  serre.partMeshes.forEach((m) => {
+    if (isIsolated && selectedPartId) {
+      m.visible = m.userData.partId === selectedPartId;
+    } else if (showAlreadyCutOnly) {
+      m.visible = Boolean(m.userData.alreadyCut);
+    } else if (m.userData.materialType === 'polycarbonate') {
+      m.visible = polyVisible;
+    } else {
+      m.visible = true;
+    }
+  });
+
+  sectionManager.syncTransforms();
+  updateHudBanner();
+  requestRenderIfNotRequested();
+}
+
+function applyAlreadyCutFilter(enable) {
+  showAlreadyCutOnly = Boolean(enable);
+  btnTopAlreadyCut?.classList.toggle('already-cut-active', showAlreadyCutOnly);
+
+  if (showAlreadyCutOnly) {
+    if (isIsolated) {
+      isIsolated = false;
+      btnInspIsolate.classList.remove('active-isolate');
+      btnInspIsolate.innerHTML = '👁️ Isoler';
+    }
+    if (selectedMesh && !selectedMesh.userData?.alreadyCut) {
+      clearSelection();
+      return;
+    }
+  }
+
+  syncPartVisibility();
+}
 
 function selectPartByMesh(mesh) {
   if (!mesh) {
@@ -463,8 +536,7 @@ function selectPartByMesh(mesh) {
     onResize();
   }
 
-  hudSelection.innerHTML = `<strong style="color:#fde68a;">${mesh.userData.instanceId}</strong> — ${part.name} (${part.length}×${part.width}×${part.thickness} mm)`;
-  hudSelection.classList.remove('hidden');
+  updateHudBanner();
 
   if (isIsolated) {
     applyIsolation(true);
@@ -473,8 +545,14 @@ function selectPartByMesh(mesh) {
 }
 
 function selectPartById(partId) {
-  const targetMesh = serre.partMeshes.find((m) => m.userData.partId === partId);
+  const targetMesh =
+    (showAlreadyCutOnly &&
+      serre.partMeshes.find((m) => m.userData.partId === partId && m.userData.alreadyCut)) ||
+    serre.partMeshes.find((m) => m.userData.partId === partId);
   if (targetMesh) {
+    if (showAlreadyCutOnly && !targetMesh.userData.alreadyCut) {
+      applyAlreadyCutFilter(false);
+    }
     selectPartByMesh(targetMesh);
   }
 }
@@ -488,11 +566,11 @@ function clearSelection() {
   if (isLiteMode && wasOpen) {
     onResize();
   }
-  hudSelection.textContent = '';
-  hudSelection.classList.add('hidden');
   if (isIsolated) {
     applyIsolation(false);
+    return;
   }
+  updateHudBanner();
   requestRenderIfNotRequested();
 }
 
@@ -500,16 +578,7 @@ function applyIsolation(enable) {
   isIsolated = enable;
   btnInspIsolate.classList.toggle('active-isolate', isIsolated);
   btnInspIsolate.innerHTML = isIsolated ? '👁️ Tout afficher' : '👁️ Isoler';
-
-  serre.partMeshes.forEach((m) => {
-    if (!isIsolated || !selectedPartId) {
-      m.visible = true;
-    } else {
-      m.visible = m.userData.partId === selectedPartId;
-    }
-  });
-  sectionManager.syncTransforms();
-  requestRenderIfNotRequested();
+  syncPartVisibility();
 }
 
 function centerCameraOnSelected() {
@@ -790,10 +859,7 @@ window.addEventListener('pointerup', (e) => {
     renderer.domElement.style.cursor = 'grab';
     dragTarget = null;
     dragStart = null;
-    if (!selectedMesh) {
-      hudSelection.textContent = '';
-      hudSelection.classList.add('hidden');
-    }
+    updateHudBanner();
     requestRenderIfNotRequested();
     if (wasMoved) return;
   }
@@ -824,6 +890,10 @@ document.getElementById('btn-insp-cutlist').addEventListener('click', () => {
 });
 
 // Boutons Barre d'en-tête & Mesures
+btnTopAlreadyCut?.addEventListener('click', () => {
+  applyAlreadyCutFilter(!showAlreadyCutOnly);
+});
+
 btnTopMeasure?.addEventListener('click', () => measurementTool.toggle());
 document.getElementById('btn-clear-measures')?.addEventListener('click', () => measurementTool.clearAll());
 
@@ -833,23 +903,8 @@ document.getElementById('chk-global-dims')?.addEventListener('change', (e) => {
 
 // Visibilité par sous-ensembles
 document.querySelectorAll('input[data-group]').forEach((chk) => {
-  chk.addEventListener('change', (e) => {
-    const grp = e.target.getAttribute('data-group');
-    const visible = e.target.checked;
-
-    if (grp === 'roof') {
-      serre.groups.roofPivot.visible = visible;
-    } else if (grp === 'polycarbonate') {
-      serre.partMeshes.forEach((m) => {
-        if (m.userData.materialType === 'polycarbonate') {
-          m.visible = visible;
-        }
-      });
-    } else if (serre.groups[grp]) {
-      serre.groups[grp].visible = visible;
-    }
-    sectionManager.syncTransforms();
-    requestRenderIfNotRequested();
+  chk.addEventListener('change', () => {
+    syncPartVisibility();
   });
 });
 
@@ -1017,6 +1072,7 @@ document.querySelectorAll('.view-btn').forEach((btn) => {
       sliderExplode.value = '0';
       valExplode.textContent = '0%';
       if (isIsolated) applyIsolation(false);
+      if (showAlreadyCutOnly) applyAlreadyCutFilter(false);
       applyKinematicsState();
     }
     controls.update();
@@ -1059,6 +1115,11 @@ function openBomModal() {
 
 document.getElementById('btn-top-cutlist').addEventListener('click', () => openCutlistModal());
 document.getElementById('btn-top-bom').addEventListener('click', () => openBomModal());
+
+document.getElementById('btn-modal-already-cut')?.addEventListener('click', () => {
+  modalCutlist.classList.add('hidden');
+  applyAlreadyCutFilter(true);
+});
 
 document.getElementById('btn-print-cutlist').addEventListener('click', () => {
   renderCutlistModal({
@@ -1176,6 +1237,7 @@ function saveViewStateToSession() {
       selectedInstanceId: selectedMesh?.userData?.instanceId || null,
       selectedPartId: selectedPartId || null,
       isIsolated,
+      showAlreadyCutOnly,
       measurements: measurementTool.measurements.map((m) => ({
         pA: m.pA.toArray(),
         pB: m.pB.toArray()
@@ -1275,7 +1337,10 @@ function restoreViewStateFromSession() {
       sectionManager.syncTransforms();
     }
 
-    // 5. Sélection & Isolation
+    // 5. Sélection, Isolation & Filtre Pièces déjà découpées
+    if (state.showAlreadyCutOnly) {
+      applyAlreadyCutFilter(true);
+    }
     if (state.selectedInstanceId || state.selectedPartId) {
       const mesh =
         serre.partMeshes.find((m) => m.userData.instanceId === state.selectedInstanceId) ||

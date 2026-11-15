@@ -127,6 +127,12 @@ html, body {
   color: #fde68a;
 }
 
+.action-btn.already-cut-active {
+  background: rgba(34, 197, 94, 0.24);
+  border-color: var(--accent-green);
+  color: #dcfce7;
+}
+
 .action-btn.accent-btn {
   background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(56, 189, 248, 0.15));
   border-color: rgba(56, 189, 248, 0.5);
@@ -1265,7 +1271,8 @@ body.lite-mode .modal-backdrop {
   background-color: #151e2c;
 }
 
-body.lite-mode .action-btn.lite-active {
+body.lite-mode .action-btn.lite-active,
+body.lite-mode .action-btn.already-cut-active {
   background: #166534;
   border-color: #22c55e;
   color: #dcfce7;
