@@ -91,7 +91,7 @@ function createBeveledPostGeometry(widthX, thicknessY, hAtMinY, hAtMaxY) {
 }
 
 /**
- * Crée une traverse inclinée (P12 / P13) avec coupes d'extrémité verticales (coupes d'aplomb)
+ * Crée une traverse inclinée (P12) avec coupes d'extrémité verticales (coupes d'aplomb)
  * plaquées parfaitement sans jeu ni collision contre les faces internes verticales des montants.
  */
 function createSlopedBraceGeometry(spanY, perpHeight, widthX, zTopAtMinY, zTopAtMaxY) {
@@ -401,14 +401,10 @@ export function buildSerreAssembly(materials, isLite = false) {
   geomP05.rotateY(Math.PI / 2);
 
   const geomP06 = createSlopedGableBoardGeometry(496, 145, 27, PARTS_CATALOG.P06.holes, isLite);
-  // Montants de côtés amovibles P07 (1145 mm) et P08 (1030 mm) :
+  // Montants de côtés amovibles P07 (1145 mm) et P08 (1053 mm) :
   // widthX = 70 mm (profondeur rentrante selon X_cad), thicknessY = 45 mm (face de 45 mm vissée contre P05 selon Y_cad)
   const geomP07 = createBeveledPostGeometry(70, 45, PARTS_CATALOG.P07.length, PARTS_CATALOG.P07.length);
   const geomP08 = createBeveledPostGeometry(70, 45, PARTS_CATALOG.P08.length, PARTS_CATALOG.P08.length);
-
-  // Traverse inclinée P13 (entraxe 266 mm entre Y=-133 et Y=+133, 45 mm en Y/Z × 70 mm en X)
-  // calée sur la pente exacte du toit (16.5°), reliant sans aucun décrochement le haut avant (Z=1066) au sommet de P07 (Z=1145) sous P06
-  const geomP13 = createSlopedBraceGeometry(266, 45, 70, 1066, 1145);
 
   const sidesConfig = [
     {
@@ -505,23 +501,6 @@ export function buildSerreAssembly(materials, isLite = false) {
     meshP08.position.copy(cadToThree(sc.postX, -155.5, 0));
     meshP08.userData.basePosition.copy(meshP08.position);
     sc.group.add(meshP08);
-
-    // Traverse inclinée P13 entre les sommets de P08 (Y=-133, Z=1030) et P07 (Y=+133, Z=1155) pour soutenir P06
-    const meshP13 = buildPartMesh({
-      geometry: geomP13,
-      material: materials.wood_post,
-      edgeMaterial: materials.edge_line,
-      partId: 'P13',
-      instanceId: `P13 #${sIdx + 1} (Support P06 ${sIdx === 0 ? 'Gauche' : 'Droit'})`,
-      subGroup: sc.key,
-      explodeVecCad: { x: sc.dirX * 260, y: 0, z: 80 },
-      isLite,
-      solidMeshes,
-      partMeshes
-    });
-    meshP13.position.copy(cadToThree(sc.postX, 0, 0));
-    meshP13.userData.basePosition.copy(meshP13.position);
-    sc.group.add(meshP13);
   });
 
   // ==========================================================================

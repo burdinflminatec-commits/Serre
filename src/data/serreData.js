@@ -186,7 +186,7 @@ export const PARTS_CATALOG = {
       { x: 960.5, y: 22.5, d: 5 },
       { x: 1100, y: 22.5, d: 5 }
     ],
-    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord arrière pour s’emboîter devant P02) • Lames au pas réel de 148 mm (joints 3 mm) • 🪚 Recouper le haut de -59 mm (→ 1145 mm) pour s’aligner sans décrochement avec la traverse P13 sous le toit.'
+    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord arrière pour s’emboîter devant P02) • Lames au pas réel de 148 mm (joints 3 mm) • 🪚 Recouper le haut de -59 mm (→ 1145 mm) pour passer sous le toit et maintenir l’arrière du pignon P06.'
   },
 
   P08: {
@@ -198,7 +198,7 @@ export const PARTS_CATALOG = {
     stockSource: 'Lambourdes de 120,4 cm DÉJÀ MONTÉES à l’avant des 2 côtés',
     stockStatus: 'in_stock',
     qty: 2,
-    length: 1030,
+    length: 1053,
     width: 45,
     thickness: 70,
     shapeType: 'rect_board',
@@ -211,7 +211,7 @@ export const PARTS_CATALOG = {
       { x: 812.5, y: 22.5, d: 5 },
       { x: 960.5, y: 22.5, d: 5 }
     ],
-    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord avant pour s’emboîter derrière P04) • 🪚 Recouper le haut de -174 mm (→ 1030 mm, sous le haut de la 7ème lame P05 à 1033 mm).'
+    notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord avant pour s’emboîter derrière P04) • 🪚 Recouper le haut de -151 mm (→ 1053 mm) pour passer sous la pente et soutenir l’avant du pignon P06.'
   },
 
   P09: {
@@ -303,29 +303,6 @@ export const PARTS_CATALOG = {
       { x: 347, y: 35, d: 5 }
     ],
     notes: '🛒 Traverse centrale (X=0, entraxe horizontal 356 mm / longueur rampante 372 mm) avec coupes verticales d’aplomb (16.5°) plaquées sans jeu contre P04 #2 (Z_haut=1030) et P02 #2 (Z_haut=1180).'
-  },
-
-  P13: {
-    partId: 'P13',
-    name: 'Traverse Inclinée Support Pignon P06 (Côtés Amovibles)',
-    category: 'Côtés Amovibles (G/D)',
-    group: 'sides',
-    materialType: 'wood_post',
-    stockSource: '2ème Lambourde à racheter (70×45 mm)',
-    stockStatus: 'to_buy',
-    qty: 2,
-    length: 278,
-    spanY: 266,
-    width: 45,
-    thickness: 70,
-    slopeDeg: 16.5,
-    shapeType: 'sloped_brace',
-    holes: [
-      { x: 30, y: 22.5, d: 5 },
-      { x: 139, y: 22.5, d: 5 },
-      { x: 248, y: 22.5, d: 5 }
-    ],
-    notes: '🛒 Fixée sur sa face de 45 mm (comme P07/P08, profondeur 70 mm) entre les faces internes de P08 (Y=-133, Z=1030) et P07 (Y=+133, Z=1155), entraxe 266 mm / rampant 278 mm (pente 16.5°), pour soutenir la lame en pente P06.'
   },
 
   Q01: {
@@ -488,11 +465,11 @@ export const STOCK_CUTLIST = {
       width: 70,
       thickness: 45,
       status: 'trim_mounted',
-      statusBadge: '🪚 Recouper haut -174 mm',
+      statusBadge: '🪚 Recouper haut -151 mm',
       cuts: [
-        { partId: 'P08', instanceLabel: 'P08 #1 & #2 • Avant Côtés G/D', length: 1030, startX: 0 }
+        { partId: 'P08', instanceLabel: 'P08 #1 & #2 • Avant Côtés G/D', length: 1053, startX: 0 }
       ],
-      offcut: 174
+      offcut: 151
     },
     {
       stockId: 'LAMB-120-STOCK',
@@ -546,13 +523,11 @@ export const STOCK_CUTLIST = {
       width: 70,
       thickness: 45,
       status: 'to_buy',
-      statusBadge: '🛒 À acheter #2 • Chute 1464 mm',
+      statusBadge: '🛒 À acheter #2 • Chute 2028 mm',
       cuts: [
-        { partId: 'P12', instanceLabel: 'P12 (Centre)', length: 372, startX: 0, bevel: '16.5°' },
-        { partId: 'P13', instanceLabel: 'P13 #1 (Côté G)', length: 278, startX: 376, bevel: '16.5°' },
-        { partId: 'P13', instanceLabel: 'P13 #2 (Côté D)', length: 278, startX: 658, bevel: '16.5°' }
+        { partId: 'P12', instanceLabel: 'P12 (Centre)', length: 372, startX: 0, bevel: '16.5°' }
       ],
-      offcut: 1464
+      offcut: 2028
     }
   ],
 

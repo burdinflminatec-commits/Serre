@@ -28,7 +28,7 @@ export function renderCutlistModal({
       <div class="summary-card warn">
         <div class="lbl">Lambourdes à Acheter</div>
         <div class="val">2 × 240 cm (Cl.4)</div>
-        <div class="sub">Pour P04 #2/#3, P12 &amp; P13</div>
+        <div class="sub">Pour P04 #2/#3 &amp; P12</div>
       </div>
       <div class="summary-card">
         <div class="lbl">Polycarbonate (2000×980)</div>

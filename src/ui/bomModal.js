@@ -61,7 +61,7 @@ export function renderBomModal(modalBodyEl, onViewPart2D) {
       </div>
       <div class="summary-card">
         <div class="lbl">Visserie Inox A2 5×60 mm</div>
-        <div class="val">154 vis utilisées / 180 en stock</div>
+        <div class="val">148 vis utilisées / 180 en stock</div>
       </div>
       <div class="summary-card warn">
         <div class="lbl">Achats complémentaires</div>
