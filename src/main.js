@@ -670,17 +670,12 @@ function raycastVisibleScene(clientX, clientY) {
   const hits = selectRaycaster.intersectObjects(getInteractiveMeshes(), false);
   const clipPlane = sectionManager.active ? sectionManager.clippingPlane : null;
 
-  let firstGhostHit = null;
   for (const h of hits) {
     if (!clipPlane || clipPlane.distanceToPoint(h.point) >= -0.05) {
-      if (h.object.isGhosted) {
-        if (!firstGhostHit) firstGhostHit = h;
-        continue;
-      }
       return h;
     }
   }
-  return firstGhostHit;
+  return null;
 }
 
 function raycastSectionPlane(clientX, clientY) {
