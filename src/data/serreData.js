@@ -47,9 +47,9 @@ export const PARTS_CATALOG = {
     category: 'Façade Arrière',
     group: 'backWall',
     materialType: 'wood_post',
-    stockSource: '2 demi-lambourdes (~120,1 & 120,4 cm) + 1 lambourde entière (240 cm)',
+    stockSource: '2 demi-lambourdes libres en stock (~120,1 & 120,4 cm)',
     stockStatus: 'in_stock',
-    qty: 3,
+    qty: 2,
     length: 1160,
     width: 70,
     thickness: 45,
@@ -64,7 +64,7 @@ export const PARTS_CATALOG = {
       { x: 960.5, y: 35, d: 5 },
       { x: 1108.5, y: 35, d: 5 }
     ],
-    notes: 'P02 #1 et #2 : recouper vos 2 demi-lambourdes libres (120,1 et 120,4 cm) à 1160 mm • P02 #3 : couper 1160 mm dans votre lambourde entière (2400 mm) • Hauteur 1160 mm calculée pour passer sans collision sous la pente du toit fermé.'
+    notes: 'P02 #1 (Gauche) et P02 #2 (Droite) : recouper vos 2 demi-lambourdes libres (120,1 et 120,4 cm) à 1160 mm • Hauteur 1160 mm calculée pour passer sans collision sous la pente du toit fermé.'
   },
 
   P03: {
@@ -97,9 +97,9 @@ export const PARTS_CATALOG = {
     category: 'Façade Avant',
     group: 'frontWall',
     materialType: 'wood_post',
-    stockSource: 'P04 #1 : chute Lambourde entière (1216 mm) • P04 #2 & #3 : Lambourde à racheter',
-    stockStatus: 'to_buy',
-    qty: 3,
+    stockSource: 'Unique lambourde entière en stock (2400×70×45 mm)',
+    stockStatus: 'in_stock',
+    qty: 2,
     length: 1030,
     width: 70,
     thickness: 45,
@@ -114,7 +114,7 @@ export const PARTS_CATALOG = {
       { x: 960.5, y: 35, d: 5 },
       { x: 1005, y: 35, d: 5 }
     ],
-    notes: '🪚 P04 #1 (1030 mm) pris dans la lambourde entière après P02 #3 • 🛒 P04 #2 et #3 (2 × 1030 mm) pris dans la 1ère lambourde à racheter • Perçages calés sur le pas de 148 mm.'
+    notes: '🪚 P04 #1 (Gauche) et P04 #2 (Droite) : 2 × 1030 mm pris dans votre unique lambourde entière en stock (2400 mm), laissant une chute de 332 mm utilisée pour P12.'
   },
 
   P05: {
@@ -157,8 +157,7 @@ export const PARTS_CATALOG = {
     holes: [
       { x: 92.5, y: 35, d: 5 },
       { x: 92.5, y: 95, d: 5 },
-      { x: 215, y: 48, d: 5 },
-      { x: 335, y: 22, d: 5 }
+      { x: 403.5, y: 11, d: 5 }
     ],
     notes: '🪚 Découpés dans la 2ème lame entière (2400 mm) : un seul tronçon de 496 × 145 mm refendu en diagonale (16.7°, trait 517 mm) donne les 2 pignons P06 (#1 Gauche et #2 Droit tête-bêche).'
   },
@@ -184,7 +183,8 @@ export const PARTS_CATALOG = {
       { x: 664.5, y: 22.5, d: 5 },
       { x: 812.5, y: 22.5, d: 5 },
       { x: 960.5, y: 22.5, d: 5 },
-      { x: 1100, y: 22.5, d: 5 }
+      { x: 1071, y: 22.5, d: 5 },
+      { x: 1131, y: 22.5, d: 5 }
     ],
     notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord arrière pour s’emboîter devant P02) • Lames au pas réel de 148 mm (joints 3 mm) • 🪚 Recouper le haut de -59 mm (→ 1145 mm) pour passer sous le toit et maintenir l’arrière du pignon P06.'
   },
@@ -209,7 +209,8 @@ export const PARTS_CATALOG = {
       { x: 516.5, y: 22.5, d: 5 },
       { x: 664.5, y: 22.5, d: 5 },
       { x: 812.5, y: 22.5, d: 5 },
-      { x: 960.5, y: 22.5, d: 5 }
+      { x: 960.5, y: 22.5, d: 5 },
+      { x: 1044, y: 22.5, d: 5 }
     ],
     notes: '✅ Déjà montés sur vos 2 côtés par la petite face de 45 mm (profondeur 70 mm rentrante, en retrait de 70 mm du bord avant pour s’emboîter derrière P04) • 🪚 Recouper le haut de -151 mm (→ 1053 mm) pour passer sous la pente et soutenir l’avant du pignon P06.'
   },
@@ -285,24 +286,45 @@ export const PARTS_CATALOG = {
 
   P12: {
     partId: 'P12',
-    name: 'Traverse Haute Centrale Avant↔Arrière (Chevron)',
-    category: 'Structure Portique (Haut)',
+    name: 'Montant Central Haut Arrière (Support Vérin Q02)',
+    category: 'Façade Arrière',
     group: 'backWall',
     materialType: 'wood_post',
-    stockSource: '2ème Lambourde à racheter (70×45 mm)',
-    stockStatus: 'to_buy',
+    stockSource: 'Chute de 332 mm de la lambourde entière en stock (2400 mm)',
+    stockStatus: 'in_stock',
     qty: 1,
-    length: 372,
-    spanY: 356,
+    length: 332,
     width: 70,
     thickness: 45,
-    slopeDeg: 16.5,
-    shapeType: 'sloped_brace',
+    shapeType: 'rect_board',
     holes: [
-      { x: 25, y: 35, d: 5 },
-      { x: 347, y: 35, d: 5 }
+      { x: 28.5, y: 35, d: 5 },
+      { x: 132.5, y: 35, d: 5 },
+      { x: 280.5, y: 35, d: 5 }
     ],
-    notes: '🛒 Traverse centrale (X=0, entraxe horizontal 356 mm / longueur rampante 372 mm) avec coupes verticales d’aplomb (16.5°) plaquées sans jeu contre P04 #2 (Z_haut=1030) et P02 #2 (Z_haut=1180).'
+    notes: '🪚 Récupéré dans la chute de 332 mm de la lambourde entière (après découpe des 2 × P04 de 1030 mm) • Vissé en haut au centre du mur arrière (X=0, Z=828..1160 mm, Rangs 6 à 8) pour porter le vérin thermique Q02.'
+  },
+
+  P13: {
+    partId: 'P13',
+    name: 'Latte Centrale de Liaison (Avant Fenêtre & Arrière)',
+    category: 'Façades Avant & Arrière',
+    group: 'frontWall',
+    materialType: 'wood_deck',
+    stockSource: 'Chute de 506 mm de la 2ème lame entière (2400 mm) délignée en 2',
+    stockStatus: 'in_stock',
+    qty: 2,
+    length: 506,
+    width: 68,
+    thickness: 27,
+    shapeType: 'rect_board',
+    holes: [
+      { x: 40, y: 34, d: 5 },
+      { x: 188, y: 34, d: 5 },
+      { x: 336, y: 34, d: 5 },
+      { x: 466, y: 34, d: 5 }
+    ],
+    notes: '🪚 Tirées de la chute restante de 506 × 145 × 27 mm de la 2ème lame entière délignée en 2 lattes de 68 mm • P13 #1 à l’avant (X=0, Z=524..1030 mm, relie P03 #4, P09 et P03 #5 sous la charnière centrale Q01 #2) • P13 #2 à l’arrière (X=0, Z=322..828 mm, solidarise P01 Rangs 3 à 6 sous P12).'
   },
 
   Q01: {
@@ -371,7 +393,7 @@ export const PARTS_CATALOG = {
 /**
  * Plan de Découpe Optimisé adapté à l'inventaire réel de l'atelier :
  * - Lames : 12 × 190 cm (déjà coupées) + 2×6 lames de 49,6 cm (déjà montées sur les 2 côtés = 88,5 cm) + 2 lames entières 240 cm à couper.
- * - Lambourdes : 4 × ~120,4 cm déjà montées sur les 2 côtés (à recouper en haut) + 2 × ~120 cm libres (120,1 et 120,4 cm) + 1 entière 240 cm + 2 à racheter.
+ * - Lambourdes : 4 × ~120,4 cm déjà montées sur les 2 côtés (à recouper en haut) + 2 × ~120 cm libres (120,1 et 120,4 cm) + 1 entière 240 cm (0 à racheter).
  */
 export const STOCK_CUTLIST = {
   // 1. LAMES DE TERRASSE 2400 × 145 × 27 mm
@@ -400,13 +422,14 @@ export const STOCK_CUTLIST = {
       width: 145,
       thickness: 27,
       status: 'to_cut',
-      statusBadge: '🪚 À couper • Chute 510 mm',
+      statusBadge: '🪚 À couper • 0 chute',
       cuts: [
         { partId: 'P05', instanceLabel: 'P05 #14 • Côté D R7', length: 496, startX: 0 },
         { partId: 'P06', instanceLabel: 'P06 #1 & #2', length: 496, startX: 500, diagonalGable: true },
-        { partId: 'P11', instanceLabel: 'P11 #1 & #2 (2×68 mm)', length: 890, startX: 1000, ripInTwo: true }
+        { partId: 'P11', instanceLabel: 'P11 #1 & #2 (2×68 mm)', length: 890, startX: 1000, ripInTwo: true },
+        { partId: 'P13', instanceLabel: 'P13 #1 & #2 (2×68 mm)', length: 506, startX: 1894, ripInTwo: true }
       ],
-      offcut: 510
+      offcut: 0
     },
     // --- B. LES 12 LAMES DÉJÀ COUPÉES / MONTÉES (Regroupées en 2 lots : ×8 et ×4) ---
     {
@@ -481,7 +504,7 @@ export const STOCK_CUTLIST = {
       status: 'to_cut',
       statusBadge: '🪚 Recouper -41 / -44 mm',
       cuts: [
-        { partId: 'P02', instanceLabel: 'P02 #1 & #2 • Arrière G & Centre', length: 1160, startX: 0 }
+        { partId: 'P02', instanceLabel: 'P02 #1 & #2 • Arrière Gauche & Droite', length: 1160, startX: 0 }
       ],
       offcut: 44
     },
@@ -493,41 +516,13 @@ export const STOCK_CUTLIST = {
       width: 70,
       thickness: 45,
       status: 'to_cut',
-      statusBadge: '🪚 À couper • Chute 206 mm',
+      statusBadge: '🪚 À couper • 0 chute',
       cuts: [
-        { partId: 'P02', instanceLabel: 'P02 #3 • Arrière Droite', length: 1160, startX: 0 },
-        { partId: 'P04', instanceLabel: 'P04 #1 • Avant Gauche', length: 1030, startX: 1164 }
+        { partId: 'P04', instanceLabel: 'P04 #1 • Avant Gauche', length: 1030, startX: 0 },
+        { partId: 'P04', instanceLabel: 'P04 #2 • Avant Droite', length: 1030, startX: 1034 },
+        { partId: 'P12', instanceLabel: 'P12 • Central Haut Arrière', length: 332, startX: 2068 }
       ],
-      offcut: 206
-    },
-    {
-      stockId: 'LAMB-ACHAT-1',
-      qtyLabel: '×1',
-      label: 'Lambourde à racheter #1 (2400 mm)',
-      length: 2400,
-      width: 70,
-      thickness: 45,
-      status: 'to_buy',
-      statusBadge: '🛒 À acheter #1 • Chute 336 mm',
-      cuts: [
-        { partId: 'P04', instanceLabel: 'P04 #2 • Avant Centre', length: 1030, startX: 0 },
-        { partId: 'P04', instanceLabel: 'P04 #3 • Avant Droite', length: 1030, startX: 1034 }
-      ],
-      offcut: 336
-    },
-    {
-      stockId: 'LAMB-ACHAT-2',
-      qtyLabel: '×1',
-      label: 'Lambourde à racheter #2 (2400 mm)',
-      length: 2400,
-      width: 70,
-      thickness: 45,
-      status: 'to_buy',
-      statusBadge: '🛒 À acheter #2 • Chute 2028 mm',
-      cuts: [
-        { partId: 'P12', instanceLabel: 'P12 (Centre)', length: 372, startX: 0, bevel: '16.5°' }
-      ],
-      offcut: 2028
+      offcut: 0
     }
   ],
 

@@ -281,11 +281,12 @@ export function buildSerreAssembly(materials, isLite = false) {
     groups.backWall.add(mesh);
   }
 
-  // 3 Montants Arrière P02 — Coupe droite à 90° (70 mm selon X × 45 mm selon Y)
+  // 2 Montants Arrière d'angle P02 — Coupe droite à 90° (70 mm selon X × 45 mm selon Y)
   // Hauteur = sous-face du toit P10 sur leur face intérieure (Y=+178) - ~3 mm de jeu
   const geomP02 = createBeveledPostGeometry(70, 45, PARTS_CATALOG.P02.length, PARTS_CATALOG.P02.length);
-  const backPostX = [-915, 0, +915];
-  backPostX.forEach((xCad, idx) => {
+  const cornerPostX = [-915, +915];
+  const hingeX = [-915, 0, +915];
+  cornerPostX.forEach((xCad, idx) => {
     const mesh = buildPartMesh({
       geometry: geomP02,
       material: materials.wood_post,
@@ -303,28 +304,49 @@ export function buildSerreAssembly(materials, isLite = false) {
     groups.backWall.add(mesh);
   });
 
-  // Unique Traverse Haute Centrale P12 (entraxe 356 mm, section 70 × 45 mm à X=0) reliant P04 #2 (Y=-178) et P02 #2 (Y=+178)
-  // Coupes d'aplomb verticales aux 2 extrémités, dessus parallèle au toit 5 mm sous les lattes P11
-  const geomP12 = createSlopedBraceGeometry(356, 70, 45, latteUndersideZ(-178) - 5, latteUndersideZ(178) - 5);
+  // Montant Central Haut Arrière P12 (chute 332 × 70 × 45 mm de la lambourde entière) :
+  // vissé en haut au centre (X=0, Z=828..1160 mm) pour solidariser les lames R6-R8 et porter le vérin Q02
+  const geomP12 = createBeveledPostGeometry(70, 45, PARTS_CATALOG.P12.length, PARTS_CATALOG.P12.length);
 
   const meshP12 = buildPartMesh({
     geometry: geomP12,
     material: materials.wood_post,
     edgeMaterial: materials.edge_line,
     partId: 'P12',
-    instanceId: 'P12 #1 (Portique Central X=0)',
+    instanceId: 'P12 #1 (Montant Central Haut Arrière X=0)',
     subGroup: 'backWall',
-    explodeVecCad: { x: 0, y: 0, z: 150 },
+    explodeVecCad: { x: 0, y: 120, z: 40 },
     isLite,
     solidMeshes,
     partMeshes
   });
-  meshP12.position.copy(cadToThree(0, 0, 0));
+  meshP12.position.copy(cadToThree(0, 200.5, 828));
   meshP12.userData.basePosition.copy(meshP12.position);
   groups.backWall.add(meshP12);
 
+  // 2 Lattes Centrales de Liaison P13 (chute 506 × 145 × 27 mm de LAME-FULL-2 délignée en 2 × 68 mm)
+  const geomP13 = createExtrudedBoardGeometry(506, 68, 27, PARTS_CATALOG.P13.holes, isLite);
+  geomP13.rotateZ(Math.PI / 2);
+
+  // P13 #2 : Renfort Central Arrière (X=0, Z=322..828 mm, Rangs 3 à 6 sous P12)
+  const meshP13Back = buildPartMesh({
+    geometry: geomP13,
+    material: materials.wood_deck,
+    edgeMaterial: materials.edge_line,
+    partId: 'P13',
+    instanceId: 'P13 #2 (Renfort Central Arrière X=0)',
+    subGroup: 'backWall',
+    explodeVecCad: { x: 0, y: 120, z: -20 },
+    isLite,
+    solidMeshes,
+    partMeshes
+  });
+  meshP13Back.position.copy(cadToThree(0, 209.5, 575));
+  meshP13Back.userData.basePosition.copy(meshP13Back.position);
+  groups.backWall.add(meshP13Back);
+
   // ==========================================================================
-  // 2. FAÇADE AVANT : 4 Lames basses P03 (R1-R4) + Fenêtre Poly P09 (R5-R6) + 1 Lame haute P03 #5 (R7) + 3 Montants P04
+  // 2. FAÇADE AVANT : 4 Lames basses P03 (R1-R4) + Fenêtre Poly P09 (R5-R6) + 1 Lame haute P03 #5 (R7) + 2 Montants P04 + Latte P13 #1
   // ==========================================================================
   const geomP03 = createExtrudedBoardGeometry(1900, 145, 27, PARTS_CATALOG.P03.holes, isLite);
   const frontSlatRows = [0, 1, 2, 3, 6]; // Rangs 1 à 4 en bas (Z=0..589) + Rang 7 tout en haut (Z=888..1033, bandeau support charnières)
@@ -370,9 +392,26 @@ export function buildSerreAssembly(materials, isLite = false) {
   meshP09.userData.basePosition.copy(meshP09.position);
   groups.frontWall.add(meshP09);
 
-  // 3 Montants Avant P04 — Coupe droite à 90° (hauteur = 1030 mm, 70 mm selon X × 45 mm selon Y)
+  // P13 #1 : Renfort Central Avant (X=0, Z=524..1030 mm) reliant P03 #4, P09 et P03 #5 sous Q01 #2
+  const meshP13Front = buildPartMesh({
+    geometry: geomP13,
+    material: materials.wood_deck,
+    edgeMaterial: materials.edge_line,
+    partId: 'P13',
+    instanceId: 'P13 #1 (Renfort Central Avant X=0)',
+    subGroup: 'frontWall',
+    explodeVecCad: { x: 0, y: -120, z: 30 },
+    isLite,
+    solidMeshes,
+    partMeshes
+  });
+  meshP13Front.position.copy(cadToThree(0, -209.5, 777));
+  meshP13Front.userData.basePosition.copy(meshP13Front.position);
+  groups.frontWall.add(meshP13Front);
+
+  // 2 Montants Avant d'angle P04 — Coupe droite à 90° (hauteur = 1030 mm, 70 mm selon X × 45 mm selon Y)
   const geomP04 = createBeveledPostGeometry(70, 45, PARTS_CATALOG.P04.length, PARTS_CATALOG.P04.length);
-  backPostX.forEach((xCad, idx) => {
+  cornerPostX.forEach((xCad, idx) => {
     const mesh = buildPartMesh({
       geometry: geomP04,
       material: materials.wood_post,
@@ -420,7 +459,7 @@ export function buildSerreAssembly(materials, isLite = false) {
       group: groups.sideRight,
       dirX: 1,
       slatX: 950 + 27 / 2, // +963.5
-      postX: 950 - 70 / 2, // +915 (70 mm vers l'intérieur, de X=+880 à X=+950, aligné avec P02 #3 et P04 #3)
+      postX: 950 - 70 / 2, // +915 (70 mm vers l'intérieur, de X=+880 à X=+950, aligné avec P02 #2 et P04 #2)
       instOffset: 7
     }
   ];
@@ -582,7 +621,7 @@ export function buildSerreAssembly(materials, isLite = false) {
   geomQ01MovingLeaf.translate(0, 1.75, -15);
 
   const hingeMeshes = [];
-  backPostX.forEach((xCad, idx) => {
+  hingeX.forEach((xCad, idx) => {
     const posLabel = idx === 0 ? 'Gauche' : idx === 1 ? 'Centre' : 'Droite';
     const meshQ01 = buildPartMesh({
       geometry: geomQ01FixedLeaf,
@@ -970,10 +1009,9 @@ export function buildSerreAssembly(materials, isLite = false) {
       }
     });
 
-    // Support du cylindre fixé contre le flanc du montant central arrière P02 #2 (X=+58, Y_cad=+165, Z_cad=1122)
-    // Décalé à X=+58 mm pour ne pas gêner la traverse centrale P12 (X=-22.5..+22.5 mm)
+    // Support du cylindre fixé au centre sur P12 (X=0, Y_cad=+163, Z_cad=1122)
     const bracketZCad = 1122;
-    meshQ02.userData.basePosition.copy(cadToThree(58, 165, bracketZCad));
+    meshQ02.userData.basePosition.copy(cadToThree(0, 163, bracketZCad));
 
     // Hauteur de la sous-face de la traverse P11 #2 (y_loc = -23.5 mm) à l'aplomb du piston (dist = 431 mm de l'axe charnière)
     const distFromHinge = 431;

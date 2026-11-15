@@ -25,10 +25,10 @@ export function renderCutlistModal({
         <div class="val">4 montées + 2×120 + 1×240</div>
         <div class="sub">Recoupes droites à 90°</div>
       </div>
-      <div class="summary-card warn">
+      <div class="summary-card">
         <div class="lbl">Lambourdes à Acheter</div>
-        <div class="val">2 × 240 cm (Cl.4)</div>
-        <div class="sub">Pour P04 #2/#3 &amp; P12</div>
+        <div class="val">0 (100% en stock ✅)</div>
+        <div class="sub">Chutes réutilisées (P12 &amp; P13)</div>
       </div>
       <div class="summary-card">
         <div class="lbl">Polycarbonate (2000×980)</div>
@@ -79,7 +79,7 @@ export function renderCutlistModal({
     <div class="cutlist-category-block">
       <div class="cutlist-category-title">
         <span>2️⃣ Lambourdes Pin Cl.4 (70 × 45 mm)</span>
-        <span class="stock-pill to-buy">🪚 6 demi-lambourdes + 1 entière en stock • 🛒 2 à racheter</span>
+        <span class="stock-pill">✅ 6 demi-lambourdes + 1 entière en stock • 0 lambourde à racheter</span>
       </div>
       ${lambourdesHtml}
     </div>
@@ -175,14 +175,23 @@ function renderLinearBoardRow(board, highlightedPartId, isPrint = false) {
         `;
       } else if (cut.ripInTwo) {
         const midY = barY + barH / 2;
+        const ripTopLabel =
+          cut.partId === 'P11'
+            ? 'P11 #1 • Sous-Toit Avant (890 × 68 mm)'
+            : 'P13 #1 • Central Avant (506 × 68 mm)';
+        const ripBotLabel =
+          cut.partId === 'P11'
+            ? 'P11 #2 • Sous-Toit Arrière (890 × 68 mm)'
+            : 'P13 #2 • Central Arrière (506 × 68 mm)';
+        const ripFontSize = cut.partId === 'P11' ? '9.5' : '8.5';
         shapeInnerSvg = `
           <rect x="${x}" y="${barY}" width="${Math.max(w, 4)}" height="${barH}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
           <line x1="${x}" y1="${midY}" x2="${x + w}" y2="${midY}" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="5 3" />
-          <text x="${x + w / 2}" y="${barY + 12}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="9.5" font-weight="bold">
-            P11 #1 • Sous-Toit Avant (890 × 68 mm)
+          <text x="${x + w / 2}" y="${barY + 12}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="${ripFontSize}" font-weight="bold">
+            ${ripTopLabel}
           </text>
-          <text x="${x + w / 2}" y="${barY + 29}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="9.5" font-weight="bold">
-            P11 #2 • Sous-Toit Arrière (890 × 68 mm)
+          <text x="${x + w / 2}" y="${barY + 29}" text-anchor="middle" fill="${isPrint ? '#000' : '#f8fafc'}" font-family="monospace" font-size="${ripFontSize}" font-weight="bold">
+            ${ripBotLabel}
           </text>
         `;
       } else {

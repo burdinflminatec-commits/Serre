@@ -15,10 +15,8 @@ export function renderBomModal(modalBodyEl, onViewPart2D) {
       const statusBadge =
         p.partId === 'Q03'
           ? '<a href="https://www.galaxus.ch/fr/s4/product/hettich-kistenverschluss-1-pcs-connecteurs-en-bois-58332504" target="_blank" rel="noopener noreferrer" class="stock-pill to-buy" style="text-decoration:underline;">🛒 Galaxus #58332504 (×8 à commander)</a>'
-          : p.partId === 'P04'
-          ? '<span class="stock-pill to-buy">⚠️ 1 en stock + 2 à racheter (Lambourde #1)</span>'
           : p.stockStatus === 'to_buy'
-          ? '<span class="stock-pill to-buy">🛒 Lambourde #2 à racheter</span>'
+          ? '<span class="stock-pill to-buy">🛒 À commander</span>'
           : '<span class="stock-pill">✅ En stock / Déjà monté</span>';
 
       return `
@@ -61,11 +59,11 @@ export function renderBomModal(modalBodyEl, onViewPart2D) {
       </div>
       <div class="summary-card">
         <div class="lbl">Visserie Inox A2 5×60 mm</div>
-        <div class="val">148 vis utilisées / 180 en stock</div>
+        <div class="val">136 vis utilisées / 180 en stock</div>
       </div>
       <div class="summary-card warn">
         <div class="lbl">Achats complémentaires</div>
-        <div class="val">2 Lambourdes + 8 Hettich (#58332504)</div>
+        <div class="val">0 Bois • 8 Hettich (#58332504)</div>
       </div>
     </div>
 
