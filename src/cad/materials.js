@@ -193,6 +193,22 @@ export function createMaterialsRegistry(clippingPlanes = [], isLite = false) {
         transparent: true,
         opacity: 0.68,
         clippingPlanes
+      }),
+
+      ghost_fill: new THREE.MeshBasicMaterial({
+        color: 0x64748b,
+        transparent: true,
+        opacity: 0.1,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        clippingPlanes
+      }),
+
+      ghost_edge: new THREE.LineBasicMaterial({
+        color: 0x94a3b8,
+        transparent: true,
+        opacity: 0.32,
+        clippingPlanes
       })
     };
   }
@@ -285,6 +301,22 @@ export function createMaterialsRegistry(clippingPlanes = [], isLite = false) {
       color: new THREE.Color('#38bdf8'),
       transparent: true,
       opacity: 0.8,
+      clippingPlanes
+    }),
+
+    ghost_fill: new THREE.MeshBasicMaterial({
+      color: new THREE.Color('#64748b'),
+      transparent: true,
+      opacity: 0.11,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      clippingPlanes
+    }),
+
+    ghost_edge: new THREE.LineBasicMaterial({
+      color: new THREE.Color('#94a3b8'),
+      transparent: true,
+      opacity: 0.35,
       clippingPlanes
     })
   };

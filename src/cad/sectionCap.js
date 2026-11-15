@@ -199,6 +199,7 @@ export class SectionCapManager {
   }
 
   _isMeshEffectivelyVisible(mesh) {
+    if (mesh.isGhosted) return false;
     let curr = mesh;
     while (curr) {
       if (!curr.visible) return false;

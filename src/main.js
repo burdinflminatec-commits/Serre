@@ -436,7 +436,43 @@ const inspQty = document.getElementById('insp-qty');
 const inspSvgContainer = document.getElementById('inspector-svg-container');
 const hudSelection = document.getElementById('hud-selection');
 const btnInspIsolate = document.getElementById('btn-insp-isolate');
-const btnTopAlreadyCut = document.getElementById('btn-top-already-cut');
+const btnAlreadyCut = document.getElementById('btn-already-cut');
+const origMeshState = new WeakMap();
+
+function ensureOrigStateSaved(m) {
+  if (!origMeshState.has(m)) {
+    const edgeLines = m.children
+      .filter((c) => c.isLineSegments)
+      .map((c) => ({ line: c, material: c.material }));
+    origMeshState.set(m, {
+      material: m.material,
+      castShadow: m.castShadow,
+      receiveShadow: m.receiveShadow,
+      edgeLines
+    });
+  }
+  return origMeshState.get(m);
+}
+
+function setMeshGhosted(m, ghosted) {
+  const orig = ensureOrigStateSaved(m);
+  m.isGhosted = Boolean(ghosted);
+  if (ghosted) {
+    m.material = materials.ghost_fill;
+    m.castShadow = false;
+    m.receiveShadow = false;
+    orig.edgeLines.forEach(({ line }) => {
+      line.material = materials.ghost_edge;
+    });
+  } else {
+    m.material = orig.material;
+    m.castShadow = orig.castShadow;
+    m.receiveShadow = orig.receiveShadow;
+    orig.edgeLines.forEach(({ line, material }) => {
+      line.material = material;
+    });
+  }
+}
 
 function isGroupChecked(groupName) {
   const chk = document.querySelector(`input[data-group="${groupName}"]`);
@@ -447,13 +483,19 @@ function updateHudBanner() {
   if (selectedMesh && selectedPartId) {
     const part = PARTS_CATALOG[selectedPartId];
     if (part) {
-      hudSelection.innerHTML = `<strong style="color:#fde68a;">${selectedMesh.userData.instanceId}</strong> — ${part.name} (${part.length}×${part.width}×${part.thickness} mm)`;
+      const statusTag =
+        showAlreadyCutOnly && selectedMesh.userData
+          ? selectedMesh.userData.alreadyCut
+            ? ' <span style="color:#86efac;">(✅ Déjà découpée)</span>'
+            : ' <span style="color:#94a3b8;">(🪚 À couper / acheter)</span>'
+          : '';
+      hudSelection.innerHTML = `<strong style="color:#fde68a;">${selectedMesh.userData.instanceId}</strong> — ${part.name} (${part.length}×${part.width}×${part.thickness} mm)${statusTag}`;
       hudSelection.classList.remove('hidden');
       return;
     }
   }
   if (showAlreadyCutOnly) {
-    hudSelection.innerHTML = `✅ <strong style="color:#86efac;">Pièces déjà découpées (28)</strong> — 8×P01 (Arrière) • 4×P03 (Avant R1–R4) • 12×P05 + 4×P07/P08 (Côtés G/D)`;
+    hudSelection.innerHTML = `✅ <strong style="color:#86efac;">Pièces déjà découpées (28)</strong> en bois plein • Reste en fantôme filaire`;
     hudSelection.classList.remove('hidden');
     return;
   }
@@ -476,15 +518,19 @@ function syncPartVisibility() {
   serre.partMeshes.forEach((m) => {
     if (isIsolated && selectedPartId) {
       m.visible = m.userData.partId === selectedPartId;
+      setMeshGhosted(m, false);
     } else if (showAlreadyCutOnly) {
-      m.visible = Boolean(m.userData.alreadyCut);
-    } else if (m.userData.materialType === 'polycarbonate') {
-      m.visible = polyVisible;
+      m.visible =
+        m.userData.materialType === 'polycarbonate' ? polyVisible : true;
+      setMeshGhosted(m, !m.userData.alreadyCut);
     } else {
-      m.visible = true;
+      m.visible =
+        m.userData.materialType === 'polycarbonate' ? polyVisible : true;
+      setMeshGhosted(m, false);
     }
   });
 
+  renderer.shadowMap.needsUpdate = true;
   sectionManager.syncTransforms();
   updateHudBanner();
   requestRenderIfNotRequested();
@@ -492,18 +538,12 @@ function syncPartVisibility() {
 
 function applyAlreadyCutFilter(enable) {
   showAlreadyCutOnly = Boolean(enable);
-  btnTopAlreadyCut?.classList.toggle('already-cut-active', showAlreadyCutOnly);
+  btnAlreadyCut?.classList.toggle('active', showAlreadyCutOnly);
 
-  if (showAlreadyCutOnly) {
-    if (isIsolated) {
-      isIsolated = false;
-      btnInspIsolate.classList.remove('active-isolate');
-      btnInspIsolate.innerHTML = '👁️ Isoler';
-    }
-    if (selectedMesh && !selectedMesh.userData?.alreadyCut) {
-      clearSelection();
-      return;
-    }
+  if (showAlreadyCutOnly && isIsolated) {
+    isIsolated = false;
+    btnInspIsolate.classList.remove('active-isolate');
+    btnInspIsolate.innerHTML = '👁️ Isoler';
   }
 
   syncPartVisibility();
@@ -550,9 +590,6 @@ function selectPartById(partId) {
       serre.partMeshes.find((m) => m.userData.partId === partId && m.userData.alreadyCut)) ||
     serre.partMeshes.find((m) => m.userData.partId === partId);
   if (targetMesh) {
-    if (showAlreadyCutOnly && !targetMesh.userData.alreadyCut) {
-      applyAlreadyCutFilter(false);
-    }
     selectPartByMesh(targetMesh);
   }
 }
@@ -633,12 +670,17 @@ function raycastVisibleScene(clientX, clientY) {
   const hits = selectRaycaster.intersectObjects(getInteractiveMeshes(), false);
   const clipPlane = sectionManager.active ? sectionManager.clippingPlane : null;
 
+  let firstGhostHit = null;
   for (const h of hits) {
     if (!clipPlane || clipPlane.distanceToPoint(h.point) >= -0.05) {
+      if (h.object.isGhosted) {
+        if (!firstGhostHit) firstGhostHit = h;
+        continue;
+      }
       return h;
     }
   }
-  return null;
+  return firstGhostHit;
 }
 
 function raycastSectionPlane(clientX, clientY) {
@@ -889,8 +931,8 @@ document.getElementById('btn-insp-cutlist').addEventListener('click', () => {
   openCutlistModal(selectedPartId);
 });
 
-// Boutons Barre d'en-tête & Mesures
-btnTopAlreadyCut?.addEventListener('click', () => {
+// Boutons Barre d'en-tête, Affichage & Mesures
+btnAlreadyCut?.addEventListener('click', () => {
   applyAlreadyCutFilter(!showAlreadyCutOnly);
 });
 
